@@ -28,8 +28,8 @@ func Provider() *schema.Provider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"alienvault_job_aws_bucket": resourceJobAWSBucket(),
-			//"alienvault_job_aws_cloudwatch": resourceJobAWSCloudWatch(),
+			"alienvault_job_aws_bucket":     resourceJobAWSBucket(),
+			"alienvault_job_aws_cloudwatch": resourceJobAWSCloudWatch(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
