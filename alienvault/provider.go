@@ -12,16 +12,19 @@ func Provider() *schema.Provider {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "The fully qualified domain name for your AlienVault instance e.g. example.alienvault.cloud",
+				DefaultFunc: schema.EnvDefaultFunc("ALIENVAULT_FQDN", nil),
 			},
 			"username": &schema.Schema{
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "AV username",
+				DefaultFunc: schema.EnvDefaultFunc("ALIENVAULT_USERNAME", nil),
 			},
 			"password": &schema.Schema{
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "AV password",
+				DefaultFunc: schema.EnvDefaultFunc("ALIENVAULT_PASSWORD", nil),
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{

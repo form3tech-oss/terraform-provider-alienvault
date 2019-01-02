@@ -167,9 +167,9 @@ func expandJobAWSBucket(d *schema.ResourceData) *Job {
 
 	// these are locked as specific to this type of job
 	job.Custom = true
-	job.App = JOB_APP_AWS
-	job.Action = JOB_ACTION_MONITOR_BUCKET
-	job.Type = JOB_TYPE_COLLECTION
+	job.App = JobAppAWS
+	job.Action = JobActionMonitorBucket
+	job.Type = JobTypeCollection
 
 	if d.Id() != "" {
 		job.UUID = d.Id()

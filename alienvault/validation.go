@@ -22,8 +22,8 @@ func validateJobPlugin(val interface{}, key string) (warns []string, errs []erro
 
 func validateJobSourceFormat(val interface{}, key string) (warns []string, errs []error) {
 	v := val.(string)
-	if v != JOB_SOURCE_FORMAT_RAW && v != JOB_SOURCE_FORMAT_SYSLOG {
-		errs = append(errs, fmt.Errorf("%q must be either %q or %q, got: %s", key, JOB_SOURCE_FORMAT_RAW, JOB_SOURCE_FORMAT_SYSLOG, v))
+	if v != JobSourceFormatRaw && v != JobSourceFormatSyslog {
+		errs = append(errs, fmt.Errorf("%q must be either %q or %q, got: %s", key, JobSourceFormatRaw, JobSourceFormatSyslog, v))
 	}
 	return
 }

@@ -1,11 +1,140 @@
 package alienvault
 
 import (
+	"errors"
+	"fmt"
+	"strings"
 	"testing"
+	"time"
 
+	"github.com/hashicorp/terraform/helper/acctest"
+	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/terraform"
 	"gotest.tools/assert"
 )
+
+const testAccJobAWSBucketConfig_basic = `
+	resource "alienvault_job_aws_bucket" "test-e2e-bucket-job" {
+		name = "%s"
+		sensor = "6a89f4aa-fa8e-44d4-9ffb-9ba1ae946777"
+		schedule = "0 0 0/1 1/1 * ? *"
+		bucket = "this-does-not-exist"
+		path = "/something/logs"
+		source_format = "raw"
+		plugin = "PostgreSQL"
+	}`
+
+func TestAccResourceJobAWSBucket(t *testing.T) {
+	var job Job
+	jobName := fmt.Sprintf("test-e2e-%d-%s", time.Now().UnixNano(), acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum))
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:      func() { testAccPreCheck(t) },
+		IDRefreshName: "alienvault_job_aws_bucket.test-e2e-bucket-job",
+		Providers:     testAccProviders,
+		CheckDestroy:  testAccCheckJobAWSBucketDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(testAccJobAWSBucketConfig_basic, jobName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckJobAWSBucketExists("alienvault_job_aws_bucket.test-e2e-bucket-job", &job),
+					testAccCheckJobAWSBucketHasPresets("alienvault_job_aws_bucket.test-e2e-bucket-job", &job),
+					resource.TestCheckResourceAttr("alienvault_job_aws_bucket.test-e2e-bucket-job", "name", jobName),
+					resource.TestCheckResourceAttr("alienvault_job_aws_bucket.test-e2e-bucket-job", "sensor", "6a89f4aa-fa8e-44d4-9ffb-9ba1ae946777"),
+					resource.TestCheckResourceAttr("alienvault_job_aws_bucket.test-e2e-bucket-job", "schedule", "0 0 0/1 1/1 * ? *"),
+					resource.TestCheckResourceAttr("alienvault_job_aws_bucket.test-e2e-bucket-job", "bucket", "this-does-not-exist"),
+					resource.TestCheckResourceAttr("alienvault_job_aws_bucket.test-e2e-bucket-job", "path", "/something/logs"),
+					resource.TestCheckResourceAttr("alienvault_job_aws_bucket.test-e2e-bucket-job", "source_format", "raw"),
+					resource.TestCheckResourceAttr("alienvault_job_aws_bucket.test-e2e-bucket-job", "plugin", "PostgreSQL"),
+					resource.TestCheckResourceAttr("alienvault_job_aws_bucket.test-e2e-bucket-job", "disabled", "false"),
+				),
+			},
+		},
+	})
+}
+
+func testAccCheckJobAWSBucketDestroy(s *terraform.State) error {
+	client := testAccProvider.Meta().(*Client)
+
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "alienvault_job_aws_bucket" {
+			continue
+		}
+
+		_, err := client.GetJob(rs.Primary.ID)
+
+		if err == nil {
+			return fmt.Errorf("job %q still exists", rs.Primary.ID)
+		}
+
+		if !strings.Contains(err.Error(), "could not be found") {
+			return fmt.Errorf("Unexpected error when checking for existence of job: %s", err)
+		}
+	}
+
+	return nil
+}
+
+func testAccCheckJobAWSBucketHasPresets(n string, res *Job) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("not found: %s", n)
+		}
+
+		if rs.Primary.ID == "" {
+			return errors.New("no job ID is set")
+		}
+
+		client := testAccProvider.Meta().(*Client)
+
+		job, err := client.GetJob(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		if job.App != JobAppAWS {
+			return fmt.Errorf("unexpected job application: '%s'", job.App)
+		}
+
+		if !job.Custom {
+			return fmt.Errorf("unexpected job state - should be flagged as a custom job but is not")
+		}
+
+		if job.Action != JobActionMonitorBucket {
+			return fmt.Errorf("unexpected job action: '%s'", job.Action)
+		}
+
+		if job.Type != JobTypeCollection {
+			return fmt.Errorf("unexpected job type: '%s'", job.Type)
+		}
+		return nil
+	}
+}
+
+func testAccCheckJobAWSBucketExists(n string, res *Job) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("not found: %s", n)
+		}
+
+		if rs.Primary.ID == "" {
+			return errors.New("no job ID is set")
+		}
+
+		client := testAccProvider.Meta().(*Client)
+
+		job, err := client.GetJob(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		*res = *job
+		return nil
+	}
+}
 
 func TestFlattenJobAWSBucket(t *testing.T) {
 
@@ -50,7 +179,7 @@ func TestExpandJobAWSBucket(t *testing.T) {
 		"disabled":      true,
 		"bucket":        "special-bucket-72",
 		"path":          "/database-logs/",
-		"source_format": JOB_SOURCE_FORMAT_RAW,
+		"source_format": JobSourceFormatRaw,
 		"plugin":        "PostgreSQL",
 	}
 
@@ -70,8 +199,8 @@ func TestExpandJobAWSBucket(t *testing.T) {
 	assert.Equal(t, job.Params["source"], input["source_format"])
 	assert.Equal(t, job.Params["plugin"], input["plugin"])
 	assert.Equal(t, job.Custom, true)
-	assert.Equal(t, job.App, JOB_APP_AWS)
-	assert.Equal(t, job.Action, JOB_ACTION_MONITOR_BUCKET)
-	assert.Equal(t, job.Type, JOB_TYPE_COLLECTION)
+	assert.Equal(t, job.App, JobAppAWS)
+	assert.Equal(t, job.Action, JobActionMonitorBucket)
+	assert.Equal(t, job.Type, JobTypeCollection)
 
 }
