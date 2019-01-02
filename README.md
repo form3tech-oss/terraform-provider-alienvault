@@ -20,17 +20,17 @@ resource "alienvault_job_aws_bucket" "nginx-logs-bucket-job" {
     bucket   = "this-does-not-exist"
     path     = "/something/logs"
     source_format = "raw"
-    plugin   = "PostgreSQL"
+    plugin   = "Nginx"
 }
 
 resource "alienvault_job_aws_cloudwatch" "test-e2e-cloudwatch-job" {
-		name = "%s"
-		sensor = "6a89f4aa-fa8e-44d4-9ffb-9ba1ae946777"
-		schedule = "0 0 0/1 1/1 * ? *"
-		region = "us-east-1"
-		group = "test-group"
-		stream = "test-stream"
-		source_format = "raw"
-		plugin = "PostgreSQL"
-	}
+    name = "RDS log collection"
+    sensor = "6a89f4aa-fa8e-44d4-9ffb-9ba1ae946777"
+    schedule = "0 0 0/1 1/1 * ? *"
+    region = "us-east-1"
+    group = "test-group"
+    stream = "test-stream"
+    source_format = "raw"
+    plugin = "PostgreSQL"
+}
 ```
