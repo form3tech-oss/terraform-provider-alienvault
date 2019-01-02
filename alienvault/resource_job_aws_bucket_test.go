@@ -28,7 +28,7 @@ const testAccJobAWSBucketConfig_basic = `
 
 func TestAccResourceJobAWSBucket(t *testing.T) {
 	var job alienvault.Job
-	jobName := fmt.Sprintf("test-e2e-%d-%s", time.Now().UnixNano(), acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum))
+	jobName := fmt.Sprintf("test-e2e-bucket-%d-%s", time.Now().UnixNano(), acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum))
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:      func() { testAccPreCheck(t) },
