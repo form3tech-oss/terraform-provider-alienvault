@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/form3tech-oss/alienvault"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -26,7 +27,7 @@ const testAccJobAWSBucketConfig_basic = `
 	}`
 
 func TestAccResourceJobAWSBucket(t *testing.T) {
-	var job Job
+	var job alienvault.Job
 	jobName := fmt.Sprintf("test-e2e-%d-%s", time.Now().UnixNano(), acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum))
 
 	resource.Test(t, resource.TestCase{
@@ -55,7 +56,7 @@ func TestAccResourceJobAWSBucket(t *testing.T) {
 }
 
 func testAccCheckJobAWSBucketDestroy(s *terraform.State) error {
-	client := testAccProvider.Meta().(*Client)
+	client := testAccProvider.Meta().(*alienvault.Client)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "alienvault_job_aws_bucket" {
@@ -76,7 +77,7 @@ func testAccCheckJobAWSBucketDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckJobAWSBucketHasPresets(n string, res *Job) resource.TestCheckFunc {
+func testAccCheckJobAWSBucketHasPresets(n string, res *alienvault.Job) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -87,7 +88,7 @@ func testAccCheckJobAWSBucketHasPresets(n string, res *Job) resource.TestCheckFu
 			return errors.New("no job ID is set")
 		}
 
-		client := testAccProvider.Meta().(*Client)
+		client := testAccProvider.Meta().(*alienvault.Client)
 
 		job, err := client.GetJob(rs.Primary.ID)
 		if err != nil {
@@ -113,7 +114,7 @@ func testAccCheckJobAWSBucketHasPresets(n string, res *Job) resource.TestCheckFu
 	}
 }
 
-func testAccCheckJobAWSBucketExists(n string, res *Job) resource.TestCheckFunc {
+func testAccCheckJobAWSBucketExists(n string, res *alienvault.Job) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -124,7 +125,7 @@ func testAccCheckJobAWSBucketExists(n string, res *Job) resource.TestCheckFunc {
 			return errors.New("no job ID is set")
 		}
 
-		client := testAccProvider.Meta().(*Client)
+		client := testAccProvider.Meta().(*alienvault.Client)
 
 		job, err := client.GetJob(rs.Primary.ID)
 		if err != nil {
@@ -140,7 +141,7 @@ func TestFlattenJobAWSBucket(t *testing.T) {
 
 	resourceLocalData := schema.TestResourceDataRaw(t, resourceJobAWSBucket().Schema, map[string]interface{}{})
 
-	job := &Job{
+	job := &alienvault.Job{
 		UUID:        "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
 		Name:        "bucket-job",
 		Description: "A job for retrieving some logs from a bucket",

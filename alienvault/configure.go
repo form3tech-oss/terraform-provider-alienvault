@@ -1,14 +1,15 @@
 package alienvault
 
 import (
+	"github.com/form3tech-oss/alienvault"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
-	client := NewClient(
+	client := alienvault.New(
 		d.Get("fqdn").(string),
-		Credentials{
+		alienvault.Credentials{
 			Username: d.Get("username").(string),
 			Password: d.Get("password").(string),
 		})

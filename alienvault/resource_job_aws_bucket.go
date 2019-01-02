@@ -3,6 +3,7 @@ package alienvault
 import (
 	"fmt"
 
+	"github.com/form3tech-oss/alienvault"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -65,7 +66,7 @@ func resourceJobAWSBucketCreate(d *schema.ResourceData, m interface{}) error {
 
 	job := expandJobAWSBucket(d)
 
-	if err := m.(*Client).CreateJob(job); err != nil {
+	if err := m.(*alienvault.Client).CreateJob(job); err != nil {
 		return err
 	}
 
@@ -78,7 +79,7 @@ func resourceJobAWSBucketCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceJobAWSBucketRead(d *schema.ResourceData, m interface{}) error {
-	job, err := m.(*Client).GetJob(d.Id())
+	job, err := m.(*alienvault.Client).GetJob(d.Id())
 	if err != nil {
 		return err
 	}
@@ -89,7 +90,7 @@ func resourceJobAWSBucketRead(d *schema.ResourceData, m interface{}) error {
 func resourceJobAWSBucketUpdate(d *schema.ResourceData, m interface{}) error {
 
 	job := expandJobAWSBucket(d)
-	if err := m.(*Client).UpdateJob(job); err != nil {
+	if err := m.(*alienvault.Client).UpdateJob(job); err != nil {
 		return err
 	}
 
@@ -97,10 +98,10 @@ func resourceJobAWSBucketUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceJobAWSBucketDelete(d *schema.ResourceData, m interface{}) error {
-	return m.(*Client).DeleteJob(d.Id())
+	return m.(*alienvault.Client).DeleteJob(d.Id())
 }
 
-func flattenJobAWSBucket(job *Job, d *schema.ResourceData) {
+func flattenJobAWSBucket(job *alienvault.Job, d *schema.ResourceData) {
 
 	if job.UUID != "" {
 		d.SetId(job.UUID)
@@ -143,9 +144,9 @@ func flattenJobAWSBucket(job *Job, d *schema.ResourceData) {
 	d.Set("disabled", job.Disabled)
 }
 
-func expandJobAWSBucket(d *schema.ResourceData) *Job {
+func expandJobAWSBucket(d *schema.ResourceData) *alienvault.Job {
 
-	job := &Job{}
+	job := &alienvault.Job{}
 	job.Name = d.Get("name").(string)
 	job.SensorID = d.Get("sensor").(string)
 	job.Schedule = d.Get("schedule").(string)

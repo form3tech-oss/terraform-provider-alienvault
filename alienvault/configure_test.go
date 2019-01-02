@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/form3tech-oss/alienvault"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,7 +42,7 @@ func TestProviderConfigure(t *testing.T) {
 	provider, err := providerConfigure(resourceLocalData)
 	require.Nil(t, err)
 
-	_, ok := provider.(*Client)
+	_, ok := provider.(*alienvault.Client)
 	require.True(t, ok)
 
 	assert.True(t, authCalled)

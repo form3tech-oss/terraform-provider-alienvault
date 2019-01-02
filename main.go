@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/form3-oss/terraform-provider-alienvault/alienvault"
+	"github.com/form3tech-oss/terraform-provider-alienvault/alienvault"
 	"github.com/hashicorp/terraform/plugin"
 	"github.com/hashicorp/terraform/terraform"
 )
