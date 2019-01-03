@@ -31,7 +31,7 @@ func TestJobSourceValidation(t *testing.T) {
 		{"syslog", true},
 		{"raw2", false},
 		{"", false},
-		{"banana", false},
+		{"invalid", false},
 	}
 
 	for _, tt := range flagtests {
@@ -52,7 +52,7 @@ func TestJobSensorValidation(t *testing.T) {
 		{"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", true},
 		{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", false},
 		{"", false},
-		{"banana", false},
+		{"invalid", false},
 	}
 
 	for _, tt := range flagtests {
