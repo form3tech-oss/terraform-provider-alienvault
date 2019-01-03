@@ -15,7 +15,7 @@ import (
 	"gotest.tools/assert"
 )
 
-const testAccJobAWSCloudWatchConfig_basic = `
+const testAccJobAWSCloudWatchConfig = `
 	resource "alienvault_job_aws_cloudwatch" "test-e2e-cloudwatch-job" {
 		name = "%s"
 		sensor = "6a89f4aa-fa8e-44d4-9ffb-9ba1ae946777"
@@ -38,7 +38,7 @@ func TestAccResourceJobAWSCloudWatch(t *testing.T) {
 		CheckDestroy:  testAccCheckJobAWSCloudWatchDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccJobAWSCloudWatchConfig_basic, jobName),
+				Config: fmt.Sprintf(testAccJobAWSCloudWatchConfig, jobName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckJobAWSCloudWatchExists("alienvault_job_aws_cloudwatch.test-e2e-cloudwatch-job", &job),
 					testAccCheckJobAWSCloudWatchHasPresets("alienvault_job_aws_cloudwatch.test-e2e-cloudwatch-job", &job),

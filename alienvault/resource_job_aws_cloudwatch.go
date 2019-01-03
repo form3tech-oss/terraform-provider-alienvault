@@ -16,12 +16,14 @@ func resourceJobAWSCloudWatch() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"uuid": &schema.Schema{
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The unique ID identifying this job resource.",
 			},
 			"sensor": &schema.Schema{
 				Type:         schema.TypeString,
 				Required:     true,
+				Description:  "The ID of the sensor which should be used to run this job.",
 				ValidateFunc: validateJobSensor,
 			},
 			"schedule": &schema.Schema{
@@ -30,16 +32,19 @@ func resourceJobAWSCloudWatch() *schema.Resource {
 				Description: "This uses a non-standard cron format to schedule the job, which AV have not currently documented. For now you can use 'daily' and 'hourly' here, which will be automatically converted to the AV cron format by this provider.",
 			},
 			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The job name.",
 			},
 			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The job description.",
 			},
 			"disabled": &schema.Schema{
-				Type:     schema.TypeBool,
-				Optional: true,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Boolean value used to temporarily disable the job.",
 			},
 			"region": &schema.Schema{
 				Type:        schema.TypeString,
@@ -59,11 +64,13 @@ func resourceJobAWSCloudWatch() *schema.Resource {
 			"source_format": &schema.Schema{
 				Type:         schema.TypeString,
 				Required:     true,
+				Description:  "The source format of the log files. Currently 'raw' or 'syslog'.",
 				ValidateFunc: validateJobSourceFormat,
 			},
 			"plugin": &schema.Schema{
 				Type:         schema.TypeString,
 				Optional:     true,
+				Description:  "The plugin used to parse the log files e.g. 'PostgreSQL' for postgres logs.",
 				ValidateFunc: validateJobPlugin,
 			},
 		},

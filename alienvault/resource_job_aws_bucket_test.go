@@ -15,7 +15,7 @@ import (
 	"gotest.tools/assert"
 )
 
-const testAccJobAWSBucketConfig_basic = `
+const testAccJobAWSBucketConfig = `
 	resource "alienvault_job_aws_bucket" "test-e2e-bucket-job" {
 		name = "%s"
 		sensor = "6a89f4aa-fa8e-44d4-9ffb-9ba1ae946777"
@@ -37,7 +37,7 @@ func TestAccResourceJobAWSBucket(t *testing.T) {
 		CheckDestroy:  testAccCheckJobAWSBucketDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(testAccJobAWSBucketConfig_basic, jobName),
+				Config: fmt.Sprintf(testAccJobAWSBucketConfig, jobName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckJobAWSBucketExists("alienvault_job_aws_bucket.test-e2e-bucket-job", &job),
 					testAccCheckJobAWSBucketHasPresets("alienvault_job_aws_bucket.test-e2e-bucket-job", &job),
