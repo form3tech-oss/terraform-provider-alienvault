@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// License is an AV license subscription
 type License struct {
 	ControlNodeLimit int   `json:"controlNodesAllowed"`
 	SensorNodeLimit  int   `json:"sensorNodesAllowed"`
@@ -12,10 +13,12 @@ type License struct {
 	Expiration       int64 `json:"expiration"`
 }
 
+// IsExpired returns true if the license in use has expired
 func (license *License) IsExpired() bool {
 	return time.Unix(license.Expiration, 0).Before(time.Now())
 }
 
+// GetLicense returns the license in use by the current account
 func (client *Client) GetLicense() (*License, error) {
 
 	req, err := client.createRequest("GET", "/license", nil)

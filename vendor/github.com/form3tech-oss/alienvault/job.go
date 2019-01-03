@@ -1,31 +1,42 @@
 package alienvault
 
+// JobApplication is the application associated with the job. Currently we support alienvault.JobApplicationAWS, which is Amazon AWS
 type JobApplication string
 
 const (
+	// JobApplicationAWS Amazon AWS
 	JobApplicationAWS JobApplication = "amazon-aws"
 )
 
+// JobAction is the action to take when running this job, such as checking a bucket for log files (alienvault.JobActionMonitorBucket)
 type JobAction string
 
 const (
-	JobActionMonitorBucket     JobAction = "s3TrackFiles"
+	// JobActionMonitorBucket is the action of monitoring an S3 bucket for log files
+	JobActionMonitorBucket JobAction = "s3TrackFiles"
+	// JobActionMonitorCloudWatch is the action of monitoring cloudwatch for log files
 	JobActionMonitorCloudWatch JobAction = "cloudWatchTrackFiles"
 )
 
+// JobType is the type of job, such as alienvault.JobTypeCollection for collecting log files
 type JobType string
 
 const (
+	// JobTypeCollection is a job type which collects log files from a given source
 	JobTypeCollection JobType = "collection"
 )
 
+// JobSourceFormat is the format which the log files are in - alienvault.JobSourceFormatRaw or alienvault.JobSourceFormatSyslog
 type JobSourceFormat string
 
 const (
-	JobSourceFormatRaw    JobSourceFormat = "raw"
+	// JobSourceFormatRaw describes raw log files
+	JobSourceFormatRaw JobSourceFormat = "raw"
+	// JobSourceFormatSyslog describes log files in syslog format
 	JobSourceFormatSyslog JobSourceFormat = "syslog"
 )
 
+// JobSchedule is a cron-like syntax which describes when to run the scheduled job. Constants are available to simplify this, such as alienvault.JobScheduleHourly
 type JobSchedule string
 
 const (

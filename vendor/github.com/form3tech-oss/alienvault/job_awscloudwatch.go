@@ -6,16 +6,18 @@ import (
 	"fmt"
 )
 
+// AWSCloudWatchJob is a job which retrieves logs from cloudwatch groups(s)/stream(s)
 type AWSCloudWatchJob struct {
 	job
-	Params AWSCloudWatchJobParams `json:"params"`
+	Params AWSCloudWatchJobParams `json:"params"` // Params allows you to specify which region/group/stream you wish to retrieve logs from, and which plugin should be used to process those logs
 }
 
+// AWSCloudWatchJobParams allows you to specify cloudwatch job parameters
 type AWSCloudWatchJobParams struct {
 	jobParams
-	Region string `json:"regionName"`
-	Group  string `json:"groupName"`
-	Stream string `json:"streamName"`
+	Region string `json:"regionName"` // The region to use when retrieving logs from cloudwatch
+	Group  string `json:"groupName"`  // The group to use when retrieving logs from cloudwatch
+	Stream string `json:"streamName"` // The stream to use when retrieving logs from cloudwatch
 }
 
 func (job *AWSCloudWatchJob) enforceTypeValues() {
@@ -25,6 +27,7 @@ func (job *AWSCloudWatchJob) enforceTypeValues() {
 	job.Type = JobTypeCollection
 }
 
+// GetAWSCloudWatchJobs returns all AWS CloudWatch jobs
 func (client *Client) GetAWSCloudWatchJobs() ([]AWSCloudWatchJob, error) {
 
 	req, err := client.createRequest("GET", "/scheduler", nil)
@@ -54,6 +57,7 @@ func (client *Client) GetAWSCloudWatchJobs() ([]AWSCloudWatchJob, error) {
 	return outputJobs, nil
 }
 
+// GetAWSCloudWatchJob returns a particular *AWSCloudWatchJob as identified by the UUID parameter
 func (client *Client) GetAWSCloudWatchJob(uuid string) (*AWSCloudWatchJob, error) {
 
 	// there is no individual GET endpoint for this, so we have to return all jobs and filter
@@ -72,6 +76,7 @@ func (client *Client) GetAWSCloudWatchJob(uuid string) (*AWSCloudWatchJob, error
 	return nil, fmt.Errorf("Job %s could not be found", uuid)
 }
 
+// CreateAWSCloudWatchJob creates a new AWS cloudwatch job
 func (client *Client) CreateAWSCloudWatchJob(j *AWSCloudWatchJob) error {
 
 	if j.UUID != "" {
@@ -109,6 +114,7 @@ func (client *Client) CreateAWSCloudWatchJob(j *AWSCloudWatchJob) error {
 	return nil
 }
 
+// UpdateAWSCloudWatchJob updates an existing AWS cloudwatch job
 func (client *Client) UpdateAWSCloudWatchJob(j *AWSCloudWatchJob) error {
 
 	// force values for this subtype of job
@@ -138,9 +144,10 @@ func (client *Client) UpdateAWSCloudWatchJob(j *AWSCloudWatchJob) error {
 	return nil
 }
 
-func (client *Client) DeleteAWSCloudWatchJob(uuid string) error {
+// DeleteAWSCloudWatchJob deletes an existing AWS cloudwatch job
+func (client *Client) DeleteAWSCloudWatchJob(j *AWSCloudWatchJob) error {
 
-	req, err := client.createRequest("DELETE", fmt.Sprintf("/scheduler/%s", uuid), nil)
+	req, err := client.createRequest("DELETE", fmt.Sprintf("/scheduler/%s", j.UUID), nil)
 	if err != nil {
 		return err
 	}

@@ -11,6 +11,7 @@ import (
 	"strings"
 )
 
+// Client is an API client for interacting with AlienVault USM Anywhere
 type Client struct {
 	creds      Credentials
 	fqdn       string
@@ -18,11 +19,13 @@ type Client struct {
 	httpClient *http.Client
 }
 
+// Credentials contain a username and password for accessing the AV USM system
 type Credentials struct {
 	Username string `json:"email"`
 	Password string `json:"password"`
 }
 
+// New creates a new client using the provided FQDN and credentials
 func New(fqdn string, creds Credentials) *Client {
 	return &Client{
 		fqdn:      fqdn,
@@ -52,8 +55,11 @@ func (client *Client) createRequest(method string, path string, body io.Reader) 
 	return req, nil
 }
 
-// Authenticate gives us a session for use in the AV API. Unfortunately schedules and other things we need are not supported in the public v2 REST API, so we have to use their internal one. The auth on this uses cookies, so we have to set this up here.
+// Authenticate gives the client a session to use in subsequent calls.
 func (client *Client) Authenticate() error {
+
+	// Unfortunately job schedules and other things we need are not supported in the public v2 REST API,
+	// so we have to use their internal one. The auth on this uses cookies, so we have to set this up here.
 
 	credsData, err := json.Marshal(client.creds)
 	if err != nil {

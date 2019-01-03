@@ -6,15 +6,17 @@ import (
 	"fmt"
 )
 
+// AWSBucketJob is a scheduled job for retrieving logs from an S3 bucket
 type AWSBucketJob struct {
 	job
-	Params AWSBucketJobParams `json:"params"`
+	Params AWSBucketJobParams `json:"params"` // Params allows you to dictate which bucket and path to use for the job, and specify which plugin should be used to process the logs.
 }
 
+// AWSBucketJobParams are parameters for an AWSBucketJob
 type AWSBucketJobParams struct {
 	jobParams
-	BucketName string `json:"bucketName"`
-	Path       string `json:"path"`
+	BucketName string `json:"bucketName"` // The name of the bucket to use when retrieving logs for this job
+	Path       string `json:"path"`       // The path to use when looking for logs in the specified bucket
 }
 
 func (job *AWSBucketJob) enforceTypeValues() {
@@ -24,6 +26,7 @@ func (job *AWSBucketJob) enforceTypeValues() {
 	job.Type = JobTypeCollection
 }
 
+// GetAWSBucketJobs returns a slice of all AWS Bucket jobs
 func (client *Client) GetAWSBucketJobs() ([]AWSBucketJob, error) {
 
 	req, err := client.createRequest("GET", "/scheduler", nil)
@@ -53,6 +56,7 @@ func (client *Client) GetAWSBucketJobs() ([]AWSBucketJob, error) {
 	return outputJobs, nil
 }
 
+// GetAWSBucketJob returns a particular *AWSBucketJob as identified by the UUID parameter
 func (client *Client) GetAWSBucketJob(uuid string) (*AWSBucketJob, error) {
 
 	// there is no individual GET endpoint for this, so we have to return all jobs and filter
@@ -71,6 +75,7 @@ func (client *Client) GetAWSBucketJob(uuid string) (*AWSBucketJob, error) {
 	return nil, fmt.Errorf("Job %s could not be found", uuid)
 }
 
+// CreateAWSBucketJob creates a new bucket job
 func (client *Client) CreateAWSBucketJob(j *AWSBucketJob) error {
 
 	if j.UUID != "" {
@@ -108,6 +113,7 @@ func (client *Client) CreateAWSBucketJob(j *AWSBucketJob) error {
 	return nil
 }
 
+// UpdateAWSBucketJob updates an AWS bucket job
 func (client *Client) UpdateAWSBucketJob(j *AWSBucketJob) error {
 
 	// force values for this subtype of job
@@ -137,9 +143,10 @@ func (client *Client) UpdateAWSBucketJob(j *AWSBucketJob) error {
 	return nil
 }
 
-func (client *Client) DeleteAWSBucketJob(uuid string) error {
+// DeleteAWSBucketJob deletes a bucket job
+func (client *Client) DeleteAWSBucketJob(j *AWSBucketJob) error {
 
-	req, err := client.createRequest("DELETE", fmt.Sprintf("/scheduler/%s", uuid), nil)
+	req, err := client.createRequest("DELETE", fmt.Sprintf("/scheduler/%s", j.UUID), nil)
 	if err != nil {
 		return err
 	}

@@ -106,7 +106,8 @@ func resourceJobAWSCloudWatchUpdate(d *schema.ResourceData, m interface{}) error
 }
 
 func resourceJobAWSCloudWatchDelete(d *schema.ResourceData, m interface{}) error {
-	return m.(*alienvault.Client).DeleteAWSCloudWatchJob(d.Id())
+	job := expandJobAWSCloudWatch(d)
+	return m.(*alienvault.Client).DeleteAWSCloudWatchJob(job)
 }
 
 func flattenJobAWSCloudWatch(job *alienvault.AWSCloudWatchJob, d *schema.ResourceData) {

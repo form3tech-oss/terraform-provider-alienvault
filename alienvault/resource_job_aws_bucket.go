@@ -99,7 +99,8 @@ func resourceJobAWSBucketUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceJobAWSBucketDelete(d *schema.ResourceData, m interface{}) error {
-	return m.(*alienvault.Client).DeleteAWSBucketJob(d.Id())
+	job := expandJobAWSBucket(d)
+	return m.(*alienvault.Client).DeleteAWSBucketJob(job)
 }
 
 func flattenJobAWSBucket(job *alienvault.AWSBucketJob, d *schema.ResourceData) {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 )
 
+// Sensor is a machine which gathers event data from your infrastrcture and absorbs it into the AV system
 type Sensor struct {
 	ID          string `json:"id,omitempty"`
 	UUID        string `json:"uuid,omitempty"`
@@ -13,6 +14,7 @@ type Sensor struct {
 	Description string `json:"description"`
 }
 
+// GetSensor returns a specific sensor as identified by the id parameter
 func (client *Client) GetSensor(id string) (*Sensor, error) {
 
 	req, err := client.createRequest("GET", "/sensors", nil)
@@ -40,6 +42,7 @@ func (client *Client) GetSensor(id string) (*Sensor, error) {
 	return nil, fmt.Errorf("Sensor %s could not be found", id)
 }
 
+// GetSensors returns a list of all sensors
 func (client *Client) GetSensors() ([]Sensor, error) {
 
 	req, err := client.createRequest("GET", "/sensors", nil)
@@ -61,6 +64,7 @@ func (client *Client) GetSensors() ([]Sensor, error) {
 	return sensors, nil
 }
 
+// CreateSensor creates a new sensor
 func (client *Client) CreateSensor(sensor *Sensor) error {
 
 	data, err := json.Marshal(sensor)
@@ -87,6 +91,7 @@ func (client *Client) CreateSensor(sensor *Sensor) error {
 	return nil
 }
 
+// UpdateSensor updates an existing sensor
 func (client *Client) UpdateSensor(sensor *Sensor) error {
 
 	data, err := json.Marshal(sensor)
@@ -113,9 +118,10 @@ func (client *Client) UpdateSensor(sensor *Sensor) error {
 	return nil
 }
 
-func (client *Client) DeleteSensor(id string) error {
+// DeleteSensor deletes an existing sensor
+func (client *Client) DeleteSensor(sensor *Sensor) error {
 
-	req, err := client.createRequest("DELETE", fmt.Sprintf("/sensors/%s", id), nil)
+	req, err := client.createRequest("DELETE", fmt.Sprintf("/sensors/%s", sensor.ID), nil)
 	if err != nil {
 		return err
 	}
