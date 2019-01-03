@@ -16,7 +16,7 @@ provider "alienvault" {
 resource "alienvault_job_aws_bucket" "nginx-logs-bucket-job" {
     name     = "nginx log collection"
     sensor   = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-    schedule = "0 0 0/1 1/1 * ? *"
+    schedule = "hourly"
     bucket   = "this-does-not-exist"
     path     = "/something/logs"
     source_format = "raw"
@@ -26,7 +26,7 @@ resource "alienvault_job_aws_bucket" "nginx-logs-bucket-job" {
 resource "alienvault_job_aws_cloudwatch" "test-e2e-cloudwatch-job" {
     name = "RDS log collection"
     sensor = "6a89f4aa-fa8e-44d4-9ffb-9ba1ae946777"
-    schedule = "0 0 0/1 1/1 * ? *"
+    schedule = "daily"
     region = "us-east-1"
     group = "test-group"
     stream = "test-stream"

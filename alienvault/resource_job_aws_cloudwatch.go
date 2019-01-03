@@ -25,8 +25,9 @@ func resourceJobAWSCloudWatch() *schema.Resource {
 				ValidateFunc: validateJobSensor,
 			},
 			"schedule": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "This uses a non-standard cron format to schedule the job, which AV have not currently documented. For now you can use 'daily' and 'hourly' here, which will be automatically converted to the AV cron format by this provider.",
 			},
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
@@ -127,7 +128,7 @@ func flattenJobAWSCloudWatch(job *alienvault.AWSCloudWatchJob, d *schema.Resourc
 
 	d.Set("name", job.Name)
 	d.Set("sensor", job.SensorID)
-	d.Set("schedule", job.Schedule)
+	d.Set("schedule", translateScheduleToTF(job.Schedule))
 	d.Set("disabled", job.Disabled)
 }
 
@@ -136,7 +137,7 @@ func expandJobAWSCloudWatch(d *schema.ResourceData) *alienvault.AWSCloudWatchJob
 	job := &alienvault.AWSCloudWatchJob{}
 	job.Name = d.Get("name").(string)
 	job.SensorID = d.Get("sensor").(string)
-	job.Schedule = alienvault.JobSchedule(d.Get("schedule").(string))
+	job.Schedule = translateScheduleFromTF(d.Get("schedule").(string))
 	job.Disabled = d.Get("disabled").(bool)
 	job.Description = d.Get("description").(string)
 

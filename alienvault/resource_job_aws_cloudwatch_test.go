@@ -164,7 +164,7 @@ func TestFlattenJobAWSCloudWatch(t *testing.T) {
 	assert.Equal(t, job.Description, resourceLocalData.Get("description").(string))
 	assert.Equal(t, job.UUID, resourceLocalData.Get("uuid").(string))
 	assert.Equal(t, job.SensorID, resourceLocalData.Get("sensor").(string))
-	assert.Equal(t, string(job.Schedule), resourceLocalData.Get("schedule").(string))
+	assert.Equal(t, "hourly", resourceLocalData.Get("schedule").(string))
 	assert.Equal(t, job.Disabled, resourceLocalData.Get("disabled").(bool))
 	assert.Equal(t, job.Params.Region, resourceLocalData.Get("region").(string))
 	assert.Equal(t, job.Params.Group, resourceLocalData.Get("group").(string))

@@ -29,7 +29,11 @@ const (
 type JobSchedule string
 
 const (
-	JobScheduleHourly JobSchedule = "0 0 0/1 1/1 * ? *"
+	// JobScheduleHourly will run every hour at :02
+	JobScheduleHourly JobSchedule = "0 2 0/1 1/1 * ? *"
+
+	// JobScheduleDaily will run daily at 00:02
+	JobScheduleDaily JobSchedule = "0 2 0 1/1 * ? *"
 )
 
 type job struct {

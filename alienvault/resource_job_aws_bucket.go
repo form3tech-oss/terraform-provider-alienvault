@@ -25,8 +25,9 @@ func resourceJobAWSBucket() *schema.Resource {
 				ValidateFunc: validateJobSensor,
 			},
 			"schedule": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "This uses a non-standard cron format to schedule the job, which AV have not currently documented. For now you can use 'daily' and 'hourly' here, which will be automatically converted to the AV cron format by this provider.",
 			},
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
@@ -119,7 +120,7 @@ func flattenJobAWSBucket(job *alienvault.AWSBucketJob, d *schema.ResourceData) {
 
 	d.Set("name", job.Name)
 	d.Set("sensor", job.SensorID)
-	d.Set("schedule", job.Schedule)
+	d.Set("schedule", translateScheduleToTF(job.Schedule))
 	d.Set("disabled", job.Disabled)
 }
 
@@ -128,7 +129,7 @@ func expandJobAWSBucket(d *schema.ResourceData) *alienvault.AWSBucketJob {
 	job := &alienvault.AWSBucketJob{}
 	job.Name = d.Get("name").(string)
 	job.SensorID = d.Get("sensor").(string)
-	job.Schedule = alienvault.JobSchedule(d.Get("schedule").(string))
+	job.Schedule = translateScheduleFromTF(d.Get("schedule").(string))
 	job.Disabled = d.Get("disabled").(bool)
 	job.Description = d.Get("description").(string)
 
@@ -148,4 +149,27 @@ func expandJobAWSBucket(d *schema.ResourceData) *alienvault.AWSBucketJob {
 	}
 
 	return job
+}
+
+var scheduleMap = map[string]alienvault.JobSchedule{
+	"hourly": alienvault.JobScheduleHourly,
+	"daily":  alienvault.JobScheduleDaily,
+}
+
+func translateScheduleFromTF(schedule string) alienvault.JobSchedule {
+	if js, ok := scheduleMap[schedule]; ok {
+		return js
+	}
+
+	return alienvault.JobSchedule(schedule)
+}
+
+func translateScheduleToTF(schedule alienvault.JobSchedule) string {
+	for tf, js := range scheduleMap {
+		if schedule == js {
+			return tf
+		}
+	}
+
+	return string(schedule)
 }
