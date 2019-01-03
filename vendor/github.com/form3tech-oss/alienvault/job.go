@@ -61,6 +61,6 @@ type job struct {
 }
 
 type jobParams struct {
-	Plugin       string          `json:"plugin,omitempty"` // Plugin describes the plugin used to aprse the log files e.g. "PostgreSQL" for postgres logs
+	Plugin       string          `json:"plugin,omitempty"` // Plugin describes the plugin used to parse the log files e.g. "PostgreSQL" for postgres logs
 	SourceFormat JobSourceFormat `json:"source"`           // SourceFormat is essentially alienvault.JobSourceFormatRaw or alienvault.JobSourceFormatSyslog
 }
