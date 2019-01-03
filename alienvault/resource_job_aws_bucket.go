@@ -66,7 +66,7 @@ func resourceJobAWSBucketCreate(d *schema.ResourceData, m interface{}) error {
 
 	job := expandJobAWSBucket(d)
 
-	if err := m.(*alienvault.Client).CreateJob(job); err != nil {
+	if err := m.(*alienvault.Client).CreateAWSBucketJob(job); err != nil {
 		return err
 	}
 
@@ -79,7 +79,7 @@ func resourceJobAWSBucketCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceJobAWSBucketRead(d *schema.ResourceData, m interface{}) error {
-	job, err := m.(*alienvault.Client).GetJob(d.Id())
+	job, err := m.(*alienvault.Client).GetAWSBucketJob(d.Id())
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func resourceJobAWSBucketRead(d *schema.ResourceData, m interface{}) error {
 func resourceJobAWSBucketUpdate(d *schema.ResourceData, m interface{}) error {
 
 	job := expandJobAWSBucket(d)
-	if err := m.(*alienvault.Client).UpdateJob(job); err != nil {
+	if err := m.(*alienvault.Client).UpdateAWSBucketJob(job); err != nil {
 		return err
 	}
 
@@ -98,10 +98,10 @@ func resourceJobAWSBucketUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceJobAWSBucketDelete(d *schema.ResourceData, m interface{}) error {
-	return m.(*alienvault.Client).DeleteJob(d.Id())
+	return m.(*alienvault.Client).DeleteAWSBucketJob(d.Id())
 }
 
-func flattenJobAWSBucket(job *alienvault.Job, d *schema.ResourceData) {
+func flattenJobAWSBucket(job *alienvault.AWSBucketJob, d *schema.ResourceData) {
 
 	if job.UUID != "" {
 		d.SetId(job.UUID)
@@ -112,31 +112,10 @@ func flattenJobAWSBucket(job *alienvault.Job, d *schema.ResourceData) {
 		d.Set("description", job.Description)
 	}
 
-	if job.Params != nil {
-		if bucket, ok := job.Params["bucketName"]; ok {
-			if bucketSafe, ok := bucket.(string); ok {
-				d.Set("bucket", bucketSafe)
-			}
-		}
-
-		if source, ok := job.Params["source"]; ok {
-			if sourceSafe, ok := source.(string); ok {
-				d.Set("source_format", sourceSafe)
-			}
-		}
-
-		if plugin, ok := job.Params["plugin"]; ok {
-			if pluginSafe, ok := plugin.(string); ok {
-				d.Set("plugin", pluginSafe)
-			}
-		}
-
-		if path, ok := job.Params["path"]; ok {
-			if pathSafe, ok := path.(string); ok {
-				d.Set("path", pathSafe)
-			}
-		}
-	}
+	d.Set("bucket", job.Params.BucketName)
+	d.Set("path", job.Params.Path)
+	d.Set("source_format", job.Params.SourceFormat)
+	d.Set("plugin", job.Params.Plugin)
 
 	d.Set("name", job.Name)
 	d.Set("sensor", job.SensorID)
@@ -144,33 +123,25 @@ func flattenJobAWSBucket(job *alienvault.Job, d *schema.ResourceData) {
 	d.Set("disabled", job.Disabled)
 }
 
-func expandJobAWSBucket(d *schema.ResourceData) *alienvault.Job {
+func expandJobAWSBucket(d *schema.ResourceData) *alienvault.AWSBucketJob {
 
-	job := &alienvault.Job{}
+	job := &alienvault.AWSBucketJob{}
 	job.Name = d.Get("name").(string)
 	job.SensorID = d.Get("sensor").(string)
-	job.Schedule = d.Get("schedule").(string)
+	job.Schedule = alienvault.JobSchedule(d.Get("schedule").(string))
 	job.Disabled = d.Get("disabled").(bool)
 	job.Description = d.Get("description").(string)
 
-	job.Params = map[string]interface{}{
-		"bucketName": d.Get("bucket").(string),
-		"source":     d.Get("source_format").(string),
-	}
+	job.Params.BucketName = d.Get("bucket").(string)
+	job.Params.SourceFormat = alienvault.JobSourceFormat(d.Get("source_format").(string))
 
 	if plugin, ok := d.GetOk("plugin"); ok {
-		job.Params["plugin"] = plugin.(string)
+		job.Params.Plugin = plugin.(string)
 	}
 
 	if path, ok := d.GetOk("path"); ok {
-		job.Params["path"] = path.(string)
+		job.Params.Path = path.(string)
 	}
-
-	// these are locked as specific to this type of job
-	job.Custom = true
-	job.App = JobAppAWS
-	job.Action = JobActionMonitorBucket
-	job.Type = JobTypeCollection
 
 	if d.Id() != "" {
 		job.UUID = d.Id()

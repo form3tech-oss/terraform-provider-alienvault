@@ -28,7 +28,7 @@ const testAccJobAWSCloudWatchConfig_basic = `
 	}`
 
 func TestAccResourceJobAWSCloudWatch(t *testing.T) {
-	var job alienvault.Job
+	var job alienvault.AWSCloudWatchJob
 	jobName := fmt.Sprintf("test-e2e-cloudwatch-%d-%s", time.Now().UnixNano(), acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum))
 
 	resource.Test(t, resource.TestCase{
@@ -65,7 +65,7 @@ func testAccCheckJobAWSCloudWatchDestroy(s *terraform.State) error {
 			continue
 		}
 
-		_, err := client.GetJob(rs.Primary.ID)
+		_, err := client.GetAWSCloudWatchJob(rs.Primary.ID)
 
 		if err == nil {
 			return fmt.Errorf("job %q still exists", rs.Primary.ID)
@@ -79,7 +79,7 @@ func testAccCheckJobAWSCloudWatchDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckJobAWSCloudWatchHasPresets(n string, res *alienvault.Job) resource.TestCheckFunc {
+func testAccCheckJobAWSCloudWatchHasPresets(n string, res *alienvault.AWSCloudWatchJob) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -92,12 +92,12 @@ func testAccCheckJobAWSCloudWatchHasPresets(n string, res *alienvault.Job) resou
 
 		client := testAccProvider.Meta().(*alienvault.Client)
 
-		job, err := client.GetJob(rs.Primary.ID)
+		job, err := client.GetAWSCloudWatchJob(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
-		if job.App != JobAppAWS {
+		if job.App != alienvault.JobApplicationAWS {
 			return fmt.Errorf("unexpected job application: '%s'", job.App)
 		}
 
@@ -105,18 +105,18 @@ func testAccCheckJobAWSCloudWatchHasPresets(n string, res *alienvault.Job) resou
 			return fmt.Errorf("unexpected job state - should be flagged as a custom job but is not")
 		}
 
-		if job.Action != JobActionMonitorCloudWatch {
+		if job.Action != alienvault.JobActionMonitorCloudWatch {
 			return fmt.Errorf("unexpected job action: '%s'", job.Action)
 		}
 
-		if job.Type != JobTypeCollection {
+		if job.Type != alienvault.JobTypeCollection {
 			return fmt.Errorf("unexpected job type: '%s'", job.Type)
 		}
 		return nil
 	}
 }
 
-func testAccCheckJobAWSCloudWatchExists(n string, res *alienvault.Job) resource.TestCheckFunc {
+func testAccCheckJobAWSCloudWatchExists(n string, res *alienvault.AWSCloudWatchJob) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -129,7 +129,7 @@ func testAccCheckJobAWSCloudWatchExists(n string, res *alienvault.Job) resource.
 
 		client := testAccProvider.Meta().(*alienvault.Client)
 
-		job, err := client.GetJob(rs.Primary.ID)
+		job, err := client.GetAWSCloudWatchJob(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -143,21 +143,20 @@ func TestFlattenJobAWSCloudWatch(t *testing.T) {
 
 	resourceLocalData := schema.TestResourceDataRaw(t, resourceJobAWSCloudWatch().Schema, map[string]interface{}{})
 
-	job := &alienvault.Job{
-		UUID:        "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-		Name:        "cloudWatch-job",
-		Description: "A job for retrieving some logs from a cloudWatch",
-		SensorID:    "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-		Schedule:    "0 0 0/1 1/1 * ? *",
-		Disabled:    true,
-		Params: map[string]interface{}{
-			"regionName": "us-east-1",
-			"groupName":  "test-group",
-			"streamName": "test-stream",
-			"source":     "raw",
-			"plugin":     "PostgreSQL",
-		},
-	}
+	job := &alienvault.AWSCloudWatchJob{}
+
+	job.UUID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	job.Name = "bucket-job"
+	job.Description = "A job for retrieving some logs from a bucket"
+	job.SensorID = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+	job.Schedule = alienvault.JobScheduleHourly
+	job.Disabled = true
+
+	job.Params.Region = "us-east-1"
+	job.Params.Group = "test-group"
+	job.Params.Stream = "test-stream"
+	job.Params.SourceFormat = "raw"
+	job.Params.Plugin = "PostgreSQL"
 
 	flattenJobAWSCloudWatch(job, resourceLocalData)
 
@@ -165,13 +164,13 @@ func TestFlattenJobAWSCloudWatch(t *testing.T) {
 	assert.Equal(t, job.Description, resourceLocalData.Get("description").(string))
 	assert.Equal(t, job.UUID, resourceLocalData.Get("uuid").(string))
 	assert.Equal(t, job.SensorID, resourceLocalData.Get("sensor").(string))
-	assert.Equal(t, job.Schedule, resourceLocalData.Get("schedule").(string))
+	assert.Equal(t, string(job.Schedule), resourceLocalData.Get("schedule").(string))
 	assert.Equal(t, job.Disabled, resourceLocalData.Get("disabled").(bool))
-	assert.Equal(t, job.Params["regionName"], resourceLocalData.Get("region").(string))
-	assert.Equal(t, job.Params["groupName"], resourceLocalData.Get("group").(string))
-	assert.Equal(t, job.Params["streamName"], resourceLocalData.Get("stream").(string))
-	assert.Equal(t, job.Params["source"], resourceLocalData.Get("source_format").(string))
-	assert.Equal(t, job.Params["plugin"], resourceLocalData.Get("plugin").(string))
+	assert.Equal(t, job.Params.Region, resourceLocalData.Get("region").(string))
+	assert.Equal(t, job.Params.Group, resourceLocalData.Get("group").(string))
+	assert.Equal(t, job.Params.Stream, resourceLocalData.Get("stream").(string))
+	assert.Equal(t, string(job.Params.SourceFormat), resourceLocalData.Get("source_format").(string))
+	assert.Equal(t, job.Params.Plugin, resourceLocalData.Get("plugin").(string))
 }
 
 func TestExpandJobAWSCloudWatch(t *testing.T) {
@@ -185,7 +184,7 @@ func TestExpandJobAWSCloudWatch(t *testing.T) {
 		"region":        "us-east-1",
 		"group":         "test-group",
 		"stream":        "test-stream",
-		"source_format": JobSourceFormatRaw,
+		"source_format": string(alienvault.JobSourceFormatRaw),
 		"plugin":        "PostgreSQL",
 	}
 
@@ -198,16 +197,11 @@ func TestExpandJobAWSCloudWatch(t *testing.T) {
 	assert.Equal(t, job.Description, input["description"])
 	assert.Equal(t, job.UUID, resourceLocalData.Id())
 	assert.Equal(t, job.SensorID, input["sensor"])
-	assert.Equal(t, job.Schedule, input["schedule"])
+	assert.Equal(t, string(job.Schedule), input["schedule"])
 	assert.Equal(t, job.Disabled, input["disabled"])
-	assert.Equal(t, job.Params["regionName"], input["region"])
-	assert.Equal(t, job.Params["groupName"], input["group"])
-	assert.Equal(t, job.Params["streamName"], input["stream"])
-	assert.Equal(t, job.Params["source"], input["source_format"])
-	assert.Equal(t, job.Params["plugin"], input["plugin"])
-	assert.Equal(t, job.Custom, true)
-	assert.Equal(t, job.App, JobAppAWS)
-	assert.Equal(t, job.Action, JobActionMonitorCloudWatch)
-	assert.Equal(t, job.Type, JobTypeCollection)
-
+	assert.Equal(t, job.Params.Region, input["region"])
+	assert.Equal(t, job.Params.Group, input["group"])
+	assert.Equal(t, job.Params.Stream, input["stream"])
+	assert.Equal(t, string(job.Params.SourceFormat), input["source_format"])
+	assert.Equal(t, job.Params.Plugin, input["plugin"])
 }

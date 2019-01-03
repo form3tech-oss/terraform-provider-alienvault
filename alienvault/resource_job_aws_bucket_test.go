@@ -27,7 +27,7 @@ const testAccJobAWSBucketConfig_basic = `
 	}`
 
 func TestAccResourceJobAWSBucket(t *testing.T) {
-	var job alienvault.Job
+	var job alienvault.AWSBucketJob
 	jobName := fmt.Sprintf("test-e2e-bucket-%d-%s", time.Now().UnixNano(), acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum))
 
 	resource.Test(t, resource.TestCase{
@@ -63,7 +63,7 @@ func testAccCheckJobAWSBucketDestroy(s *terraform.State) error {
 			continue
 		}
 
-		_, err := client.GetJob(rs.Primary.ID)
+		_, err := client.GetAWSBucketJob(rs.Primary.ID)
 
 		if err == nil {
 			return fmt.Errorf("job %q still exists", rs.Primary.ID)
@@ -77,7 +77,7 @@ func testAccCheckJobAWSBucketDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckJobAWSBucketHasPresets(n string, res *alienvault.Job) resource.TestCheckFunc {
+func testAccCheckJobAWSBucketHasPresets(n string, res *alienvault.AWSBucketJob) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -90,12 +90,12 @@ func testAccCheckJobAWSBucketHasPresets(n string, res *alienvault.Job) resource.
 
 		client := testAccProvider.Meta().(*alienvault.Client)
 
-		job, err := client.GetJob(rs.Primary.ID)
+		job, err := client.GetAWSBucketJob(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
-		if job.App != JobAppAWS {
+		if job.App != alienvault.JobApplicationAWS {
 			return fmt.Errorf("unexpected job application: '%s'", job.App)
 		}
 
@@ -103,18 +103,18 @@ func testAccCheckJobAWSBucketHasPresets(n string, res *alienvault.Job) resource.
 			return fmt.Errorf("unexpected job state - should be flagged as a custom job but is not")
 		}
 
-		if job.Action != JobActionMonitorBucket {
+		if job.Action != alienvault.JobActionMonitorBucket {
 			return fmt.Errorf("unexpected job action: '%s'", job.Action)
 		}
 
-		if job.Type != JobTypeCollection {
+		if job.Type != alienvault.JobTypeCollection {
 			return fmt.Errorf("unexpected job type: '%s'", job.Type)
 		}
 		return nil
 	}
 }
 
-func testAccCheckJobAWSBucketExists(n string, res *alienvault.Job) resource.TestCheckFunc {
+func testAccCheckJobAWSBucketExists(n string, res *alienvault.AWSBucketJob) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -127,7 +127,7 @@ func testAccCheckJobAWSBucketExists(n string, res *alienvault.Job) resource.Test
 
 		client := testAccProvider.Meta().(*alienvault.Client)
 
-		job, err := client.GetJob(rs.Primary.ID)
+		job, err := client.GetAWSBucketJob(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -141,20 +141,19 @@ func TestFlattenJobAWSBucket(t *testing.T) {
 
 	resourceLocalData := schema.TestResourceDataRaw(t, resourceJobAWSBucket().Schema, map[string]interface{}{})
 
-	job := &alienvault.Job{
-		UUID:        "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-		Name:        "bucket-job",
-		Description: "A job for retrieving some logs from a bucket",
-		SensorID:    "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-		Schedule:    "0 0 0/1 1/1 * ? *",
-		Disabled:    true,
-		Params: map[string]interface{}{
-			"bucketName": "special-bucket-72",
-			"path":       "/database-logs/",
-			"source":     "raw",
-			"plugin":     "PostgreSQL",
-		},
-	}
+	job := &alienvault.AWSBucketJob{}
+
+	job.UUID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	job.Name = "bucket-job"
+	job.Description = "A job for retrieving some logs from a bucket"
+	job.SensorID = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+	job.Schedule = alienvault.JobScheduleHourly
+	job.Disabled = true
+
+	job.Params.BucketName = "special-bucket-72"
+	job.Params.Path = "/database-logs/"
+	job.Params.SourceFormat = "raw"
+	job.Params.Plugin = "PostgreSQL"
 
 	flattenJobAWSBucket(job, resourceLocalData)
 
@@ -162,12 +161,12 @@ func TestFlattenJobAWSBucket(t *testing.T) {
 	assert.Equal(t, job.Description, resourceLocalData.Get("description").(string))
 	assert.Equal(t, job.UUID, resourceLocalData.Get("uuid").(string))
 	assert.Equal(t, job.SensorID, resourceLocalData.Get("sensor").(string))
-	assert.Equal(t, job.Schedule, resourceLocalData.Get("schedule").(string))
+	assert.Equal(t, string(job.Schedule), resourceLocalData.Get("schedule").(string))
 	assert.Equal(t, job.Disabled, resourceLocalData.Get("disabled").(bool))
-	assert.Equal(t, job.Params["bucketName"], resourceLocalData.Get("bucket").(string))
-	assert.Equal(t, job.Params["path"], resourceLocalData.Get("path").(string))
-	assert.Equal(t, job.Params["source"], resourceLocalData.Get("source_format").(string))
-	assert.Equal(t, job.Params["plugin"], resourceLocalData.Get("plugin").(string))
+	assert.Equal(t, job.Params.BucketName, resourceLocalData.Get("bucket").(string))
+	assert.Equal(t, job.Params.Path, resourceLocalData.Get("path").(string))
+	assert.Equal(t, string(job.Params.SourceFormat), resourceLocalData.Get("source_format").(string))
+	assert.Equal(t, job.Params.Plugin, resourceLocalData.Get("plugin").(string))
 }
 
 func TestExpandJobAWSBucket(t *testing.T) {
@@ -180,7 +179,7 @@ func TestExpandJobAWSBucket(t *testing.T) {
 		"disabled":      true,
 		"bucket":        "special-bucket-72",
 		"path":          "/database-logs/",
-		"source_format": JobSourceFormatRaw,
+		"source_format": string(alienvault.JobSourceFormatRaw),
 		"plugin":        "PostgreSQL",
 	}
 
@@ -193,15 +192,11 @@ func TestExpandJobAWSBucket(t *testing.T) {
 	assert.Equal(t, job.Description, input["description"])
 	assert.Equal(t, job.UUID, resourceLocalData.Id())
 	assert.Equal(t, job.SensorID, input["sensor"])
-	assert.Equal(t, job.Schedule, input["schedule"])
+	assert.Equal(t, string(job.Schedule), input["schedule"])
 	assert.Equal(t, job.Disabled, input["disabled"])
-	assert.Equal(t, job.Params["bucketName"], input["bucket"])
-	assert.Equal(t, job.Params["path"], input["path"])
-	assert.Equal(t, job.Params["source"], input["source_format"])
-	assert.Equal(t, job.Params["plugin"], input["plugin"])
-	assert.Equal(t, job.Custom, true)
-	assert.Equal(t, job.App, JobAppAWS)
-	assert.Equal(t, job.Action, JobActionMonitorBucket)
-	assert.Equal(t, job.Type, JobTypeCollection)
+	assert.Equal(t, job.Params.BucketName, input["bucket"])
+	assert.Equal(t, job.Params.Path, input["path"])
+	assert.Equal(t, string(job.Params.SourceFormat), input["source_format"])
+	assert.Equal(t, job.Params.Plugin, input["plugin"])
 
 }

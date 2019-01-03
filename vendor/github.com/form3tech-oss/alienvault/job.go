@@ -1,122 +1,51 @@
 package alienvault
 
-import (
-	"bytes"
-	"encoding/json"
-	"fmt"
+type JobApplication string
+
+const (
+	JobApplicationAWS JobApplication = "amazon-aws"
 )
 
-type Job struct {
-	UUID        string                 `json:"uuid,omitempty"`
-	SensorID    string                 `json:"sensor"`
-	App         string                 `json:"app"`
-	Action      string                 `json:"action"`
-	Schedule    string                 `json:"schedule"`
-	Name        string                 `json:"name"`
-	Description string                 `json:"description"`
-	Type        string                 `json:"type"`
-	Disabled    bool                   `json:"disabled"`
-	Params      map[string]interface{} `json:"params,omitempty"`
-	Running     bool                   `json:"running,omitempty"`
-	Custom      bool                   `json:"custom"`
-	LastRun     int                    `json:"lastRun,omitempty"`
-	NextRun     int                    `json:"nextRun,omitempty"`
+type JobAction string
+
+const (
+	JobActionMonitorBucket     JobAction = "s3TrackFiles"
+	JobActionMonitorCloudWatch JobAction = "cloudWatchTrackFiles"
+)
+
+type JobType string
+
+const (
+	JobTypeCollection JobType = "collection"
+)
+
+type JobSourceFormat string
+
+const (
+	JobSourceFormatRaw    JobSourceFormat = "raw"
+	JobSourceFormatSyslog JobSourceFormat = "syslog"
+)
+
+type JobSchedule string
+
+const (
+	JobScheduleHourly JobSchedule = "0 0 0/1 1/1 * ? *"
+)
+
+type job struct {
+	UUID        string         `json:"uuid,omitempty"` // UUID is a unique ID for the job. Read-only.
+	SensorID    string         `json:"sensor"`         // SensorID is the ID of the sensor to use to run this job.
+	Schedule    JobSchedule    `json:"schedule"`       // Schedule is a slightly obscure cron format, such as "0 0 0/1 1/1 * ? *" meaning hourly
+	Name        string         `json:"name"`           // Name is a human-readable name for the job
+	Description string         `json:"description"`    // Description is a human-readable description of the job
+	Disabled    bool           `json:"disabled"`       // Disabled describes whether the job should run or not. You can set this if you wish to temporarily disable the job.
+	App         JobApplication `json:"app"`            // App describes the app associated with this job e.g. "amazon-aws". You do not usually need to populate this, it will be filled by default.
+	Action      JobAction      `json:"action"`         // Action describes the action associated with this job e.g. "s3TrackFiles". You do not usually need to populate this, it will be filled by default.
+	Type        JobType        `json:"type"`           // Type describes the type of job e.g. "collection" for log collection jobs. You do not usually need to populate this, it will be filled by default.
+	Custom      bool           `json:"custom"`         // Custom describes whether the job was built in or a custom job created by the user. Read-only.
 }
 
-func (client *Client) GetJob(uuid string) (*Job, error) {
-
-	req, err := client.createRequest("GET", "/scheduler", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := client.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	jobs := []Job{}
-
-	if err := json.NewDecoder(resp.Body).Decode(&jobs); err != nil {
-		return nil, err
-	}
-
-	for _, job := range jobs {
-		if job.UUID == uuid {
-			return &job, nil
-		}
-	}
-
-	return nil, fmt.Errorf("Job %s could not be found", uuid)
-}
-
-func (client *Client) CreateJob(job *Job) error {
-
-	data, err := json.Marshal(job)
-	if err != nil {
-		return err
-	}
-
-	req, err := client.createRequest("POST", "/scheduler", bytes.NewBuffer(data))
-	if err != nil {
-		return err
-	}
-
-	resp, err := client.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-
-	createdJob := Job{}
-	if err := json.NewDecoder(resp.Body).Decode(&createdJob); err != nil {
-		return err
-	}
-
-	job.UUID = createdJob.UUID
-	return nil
-}
-
-func (client *Client) UpdateJob(job *Job) error {
-
-	data, err := json.Marshal(job)
-	if err != nil {
-		return err
-	}
-
-	req, err := client.createRequest("PUT", fmt.Sprintf("/scheduler/%s", job.UUID), bytes.NewBuffer(data))
-	if err != nil {
-		return err
-	}
-
-	resp, err := client.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-
-	createdJob := Job{}
-	if err := json.NewDecoder(resp.Body).Decode(&createdJob); err != nil {
-		return err
-	}
-
-	job.UUID = createdJob.UUID
-	return nil
-}
-
-func (client *Client) DeleteJob(uuid string) error {
-
-	req, err := client.createRequest("DELETE", fmt.Sprintf("/scheduler/%s", uuid), nil)
-	if err != nil {
-		return err
-	}
-
-	resp, err := client.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("Unexpected status code on delete: %d", resp.StatusCode)
-	}
-
-	return nil
+type jobParams struct {
+	Plugin       string          `json:"plugin,omitempty"` // Plugin describes the plugin used to aprse the log files e.g. "PostgreSQL" for postgres logs
+	SourceFormat JobSourceFormat `json:"source"`           // SourceFormat is essentially alienvault.JobSourceFormatRaw or alienvault.JobSourceFormatSyslog
 }

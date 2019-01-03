@@ -10,20 +10,33 @@ Whilst AV do provide a public API, this does not yet support operations on job s
 
 ```go
 alienVaultClient := alienvault.New(
-    os.GetEnv("AV_FQDN"),
+    os.Getenv("ALIENVAULT_FQDN"),
     alienvault.Credentials{
-        Username: os.GetEnv("AV_USERNAME"),
-        Password: os.GetEnv("AV_PASSWORD"),
+        Username: os.Getenv("ALIENVAULT_USERNAME"),
+        Password: os.Getenv("ALIENVAULT_PASSWORD"),
     })
 
 if err := alienVaultClient.Authenticate(); err != nil {
     panic(err)
 }
 
-job, err := alienVaultClient.GetJob("...")
+job, err := alienVaultClient.GetAWSBucketJob("...")
 if err != nil {
     panic(err)
 }
 
 fmt.Printf("Job details: %#v\n", *job)
 ```
+
+## Testing
+
+To run acceptance tests, you will need to populate the following env vars:
+
+- `ALIENVAULT_FQDN`
+- `ALIENVAULT_USERNAME`
+- `ALIENVAULT_PASSWORD`
+
+## Problems/Outstanding Work
+
+- Sensor management is not automatically tested as the AV account we're using only has a license for 2 sensors, both of which we're using.
+- We need to switch to the public (v2) API once AV add support for managing sensors and jobs

@@ -3,6 +3,7 @@ package alienvault
 import (
 	"fmt"
 
+	"github.com/form3tech-oss/alienvault"
 	"github.com/google/uuid"
 )
 
@@ -22,8 +23,8 @@ func validateJobPlugin(val interface{}, key string) (warns []string, errs []erro
 
 func validateJobSourceFormat(val interface{}, key string) (warns []string, errs []error) {
 	v := val.(string)
-	if v != JobSourceFormatRaw && v != JobSourceFormatSyslog {
-		errs = append(errs, fmt.Errorf("%q must be either %q or %q, got: %s", key, JobSourceFormatRaw, JobSourceFormatSyslog, v))
+	if v != string(alienvault.JobSourceFormatRaw) && v != string(alienvault.JobSourceFormatSyslog) {
+		errs = append(errs, fmt.Errorf("%q must be either %q or %q, got: %s", key, alienvault.JobSourceFormatRaw, alienvault.JobSourceFormatSyslog, v))
 	}
 	return
 }

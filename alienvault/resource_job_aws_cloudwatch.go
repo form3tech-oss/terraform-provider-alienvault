@@ -73,7 +73,7 @@ func resourceJobAWSCloudWatchCreate(d *schema.ResourceData, m interface{}) error
 
 	job := expandJobAWSCloudWatch(d)
 
-	if err := m.(*alienvault.Client).CreateJob(job); err != nil {
+	if err := m.(*alienvault.Client).CreateAWSCloudWatchJob(job); err != nil {
 		return err
 	}
 
@@ -86,7 +86,7 @@ func resourceJobAWSCloudWatchCreate(d *schema.ResourceData, m interface{}) error
 }
 
 func resourceJobAWSCloudWatchRead(d *schema.ResourceData, m interface{}) error {
-	job, err := m.(*alienvault.Client).GetJob(d.Id())
+	job, err := m.(*alienvault.Client).GetAWSCloudWatchJob(d.Id())
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func resourceJobAWSCloudWatchRead(d *schema.ResourceData, m interface{}) error {
 func resourceJobAWSCloudWatchUpdate(d *schema.ResourceData, m interface{}) error {
 
 	job := expandJobAWSCloudWatch(d)
-	if err := m.(*alienvault.Client).UpdateJob(job); err != nil {
+	if err := m.(*alienvault.Client).UpdateAWSCloudWatchJob(job); err != nil {
 		return err
 	}
 
@@ -105,10 +105,10 @@ func resourceJobAWSCloudWatchUpdate(d *schema.ResourceData, m interface{}) error
 }
 
 func resourceJobAWSCloudWatchDelete(d *schema.ResourceData, m interface{}) error {
-	return m.(*alienvault.Client).DeleteJob(d.Id())
+	return m.(*alienvault.Client).DeleteAWSCloudWatchJob(d.Id())
 }
 
-func flattenJobAWSCloudWatch(job *alienvault.Job, d *schema.ResourceData) {
+func flattenJobAWSCloudWatch(job *alienvault.AWSCloudWatchJob, d *schema.ResourceData) {
 
 	if job.UUID != "" {
 		d.SetId(job.UUID)
@@ -119,38 +119,11 @@ func flattenJobAWSCloudWatch(job *alienvault.Job, d *schema.ResourceData) {
 		d.Set("description", job.Description)
 	}
 
-	if job.Params != nil {
-		if region, ok := job.Params["regionName"]; ok {
-			if regionSafe, ok := region.(string); ok {
-				d.Set("region", regionSafe)
-			}
-		}
-
-		if group, ok := job.Params["groupName"]; ok {
-			if groupSafe, ok := group.(string); ok {
-				d.Set("group", groupSafe)
-			}
-		}
-
-		if stream, ok := job.Params["streamName"]; ok {
-			if streamSafe, ok := stream.(string); ok {
-				d.Set("stream", streamSafe)
-			}
-		}
-
-		if source, ok := job.Params["source"]; ok {
-			if sourceSafe, ok := source.(string); ok {
-				d.Set("source_format", sourceSafe)
-			}
-		}
-
-		if plugin, ok := job.Params["plugin"]; ok {
-			if pluginSafe, ok := plugin.(string); ok {
-				d.Set("plugin", pluginSafe)
-			}
-		}
-
-	}
+	d.Set("region", job.Params.Region)
+	d.Set("group", job.Params.Group)
+	d.Set("stream", job.Params.Stream)
+	d.Set("source_format", job.Params.SourceFormat)
+	d.Set("plugin", job.Params.Plugin)
 
 	d.Set("name", job.Name)
 	d.Set("sensor", job.SensorID)
@@ -158,31 +131,23 @@ func flattenJobAWSCloudWatch(job *alienvault.Job, d *schema.ResourceData) {
 	d.Set("disabled", job.Disabled)
 }
 
-func expandJobAWSCloudWatch(d *schema.ResourceData) *alienvault.Job {
+func expandJobAWSCloudWatch(d *schema.ResourceData) *alienvault.AWSCloudWatchJob {
 
-	job := &alienvault.Job{}
+	job := &alienvault.AWSCloudWatchJob{}
 	job.Name = d.Get("name").(string)
 	job.SensorID = d.Get("sensor").(string)
-	job.Schedule = d.Get("schedule").(string)
+	job.Schedule = alienvault.JobSchedule(d.Get("schedule").(string))
 	job.Disabled = d.Get("disabled").(bool)
 	job.Description = d.Get("description").(string)
 
-	job.Params = map[string]interface{}{
-		"regionName": d.Get("region").(string),
-		"groupName":  d.Get("group").(string),
-		"streamName": d.Get("stream").(string),
-		"source":     d.Get("source_format").(string),
-	}
+	job.Params.Region = d.Get("region").(string)
+	job.Params.Group = d.Get("group").(string)
+	job.Params.Stream = d.Get("stream").(string)
+	job.Params.SourceFormat = alienvault.JobSourceFormat(d.Get("source_format").(string))
 
 	if plugin, ok := d.GetOk("plugin"); ok {
-		job.Params["plugin"] = plugin.(string)
+		job.Params.Plugin = plugin.(string)
 	}
-
-	// these are locked as specific to this type of job
-	job.Custom = true
-	job.App = JobAppAWS
-	job.Action = JobActionMonitorCloudWatch
-	job.Type = JobTypeCollection
 
 	if d.Id() != "" {
 		job.UUID = d.Id()
