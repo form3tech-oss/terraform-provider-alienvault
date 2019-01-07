@@ -1,5 +1,5 @@
 builds:
-  - binary: terraform-provider-form3_v{{.Version}}
+  - binary: terraform-provider-alienvault_v{{.Version}}
     goos:
       - darwin
       - linux
