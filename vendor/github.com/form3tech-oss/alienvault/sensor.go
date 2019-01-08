@@ -99,7 +99,7 @@ func (client *Client) UpdateSensor(sensor *Sensor) error {
 		return err
 	}
 
-	req, err := client.createRequest("PUT", fmt.Sprintf("/sensors/%s", sensor.ID), bytes.NewBuffer(data))
+	req, err := client.createRequest("PATCH", fmt.Sprintf("/sensors/%s", sensor.ID), bytes.NewBuffer(data))
 	if err != nil {
 		return err
 	}
