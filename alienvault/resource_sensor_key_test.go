@@ -49,13 +49,13 @@ func testAccCheckSensorKeyDestroy(s *terraform.State) error {
 			continue
 		}
 
-		_, err := client.GetSensorKey(rs.Primary.ID)
+		key, err := client.GetSensorKey(rs.Primary.ID)
 
-		if err == nil {
+		if err == nil && key != nil && !key.Consumed {
 			return fmt.Errorf("key %q still exists", rs.Primary.ID)
 		}
 
-		if !strings.Contains(err.Error(), "not found") {
+		if err != nil && !strings.Contains(err.Error(), "not found") {
 			return fmt.Errorf("Unexpected error when checking for existence of key: %s", err)
 		}
 	}
