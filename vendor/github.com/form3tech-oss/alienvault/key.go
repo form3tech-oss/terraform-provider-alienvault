@@ -8,7 +8,8 @@ import (
 
 // SensorKey is a key used to activate a sensor. The ID is traditionally used as an auth code to activate a sensor using the web UI.
 type SensorKey struct {
-	ID        string  `json:"id"`
+	ID        string `json:"id"`
+	Consumed  bool
 	CreatedAt int     `json:"createdAt"`
 	ExpiresAt int     `json:"expires"`
 	NodeID    *string `json:"nodeId"`
@@ -81,7 +82,11 @@ func (client *Client) GetSensorKey(id string) (*SensorKey, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("Key not found")
+	// if the key is not found mark it as consumed in the returned value, as keys are only available temporarily
+	return &SensorKey{
+		ID:       id,
+		Consumed: true,
+	}, nil
 }
 
 // DeleteSensorKey deletes a particular sensor key as identified by the supplied id

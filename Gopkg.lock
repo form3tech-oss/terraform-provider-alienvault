@@ -118,11 +118,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:33977110591c2d355f9efbe08e4bcfe1459ad839f8c937ea3dc033fba7f9efb4"
+  digest = "1:3202790b3b92f3c4c9a8b58ae093ec0b2291397e9902617095875e3772b557b8"
   name = "github.com/form3tech-oss/alienvault"
   packages = ["."]
   pruneopts = "UT"
-  revision = "17d6ef31e359e179d1ba8b1dba5df673fd5965cc"
+  revision = "c658c756e32e1cf8b15f74168d29b54027556613"
 
 [[projects]]
   digest = "1:4c0989ca0bcd10799064318923b9bc2db6b4d6338dd75f3f2d86c3511aaaf5cf"
@@ -150,14 +150,6 @@
   pruneopts = "UT"
   revision = "3af367b6b30c263d47e8895973edcca9a49cf029"
   version = "v0.2.0"
-
-[[projects]]
-  digest = "1:236d7e1bdb50d8f68559af37dbcf9d142d56b431c9b2176d41e2a009b664cda8"
-  name = "github.com/google/uuid"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "9b3b1e0f5f99ae461456d768e7d301a7acdaa2d8"
-  version = "v1.1.0"
 
 [[projects]]
   digest = "1:0ade334594e69404d80d9d323445d2297ff8161637f9b2d347cc6973d2d6f05b"
@@ -642,7 +634,6 @@
   analyzer-version = 1
   input-imports = [
     "github.com/form3tech-oss/alienvault",
-    "github.com/google/uuid",
     "github.com/hashicorp/terraform/helper/acctest",
     "github.com/hashicorp/terraform/helper/resource",
     "github.com/hashicorp/terraform/helper/schema",
