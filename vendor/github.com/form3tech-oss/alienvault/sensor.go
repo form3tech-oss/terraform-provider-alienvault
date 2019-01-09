@@ -2,16 +2,51 @@ package alienvault
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 )
 
 // Sensor is a machine which gathers event data from your infrastrcture and absorbs it into the AV system
 type Sensor struct {
-	ID          string `json:"id,omitempty"`
-	UUID        string `json:"uuid,omitempty"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	ID          string       `json:"id,omitempty"`
+	UUID        string       `json:"uuid,omitempty"`
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	Status      SensorStatus `json:"status"`
+}
+
+// SensorStatus refers to whether or not the sensor is ready for jobs. "Ready" indicates that this is so.
+type SensorStatus string
+
+const (
+	// SensorStatusReady indicates sensor is ready for configuration
+	SensorStatusReady SensorStatus = "Ready"
+)
+
+// WaitForSensorToBeReady blocks until the given sensor is ready. Pass a context with timeout to abort after a set time.
+func (client *Client) WaitForSensorToBeReady(ctx context.Context, sensor *Sensor) error {
+
+	ticker := time.NewTicker(time.Second * 10)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("context expired, no longer waiting for sensor to be ready")
+		case <-ticker.C:
+			s, err := client.GetSensor(sensor.ID)
+			if err != nil {
+				return err
+			}
+
+			if s.Status == SensorStatusReady {
+				return nil
+			}
+		}
+	}
+
 }
 
 // GetSensor returns a specific sensor as identified by the id parameter

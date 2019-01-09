@@ -1,14 +1,23 @@
 package alienvault
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/form3tech-oss/alienvault"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func resourceJobAWSCloudWatch() *schema.Resource {
+
+	// long timeout because the sensor can take a loooong time to be ready on creation
+	createTimeout := time.Minute * 30
+
 	return &schema.Resource{
+		Timeouts: &schema.ResourceTimeout{
+			Create: &createTimeout,
+		},
 		Create: resourceJobAWSCloudWatchCreate,
 		Read:   resourceJobAWSCloudWatchRead,
 		Update: resourceJobAWSCloudWatchUpdate,
@@ -81,9 +90,22 @@ func resourceJobAWSCloudWatch() *schema.Resource {
 
 func resourceJobAWSCloudWatchCreate(d *schema.ResourceData, m interface{}) error {
 
-	job, err := expandJobAWSCloudWatch(d, m.(*alienvault.Client))
+	client := m.(*alienvault.Client)
+	job, err := expandJobAWSCloudWatch(d, client)
 	if err != nil {
 		return err
+	}
+
+	if job.SensorID != "" {
+		sensor, err := client.GetSensor(job.SensorID)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute*30)
+		defer cancel()
+		if err := client.WaitForSensorToBeReady(ctx, sensor); err != nil {
+			return err
+		}
 	}
 
 	if err := m.(*alienvault.Client).CreateAWSCloudWatchJob(job); err != nil {
