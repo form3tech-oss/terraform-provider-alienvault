@@ -47,17 +47,20 @@ func resourceJobAWSCloudWatch() *schema.Resource {
 			},
 			"region": &schema.Schema{
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Default:     "*",
 				Description: "AWS region (e.g. us-west-2) you are collecting CloudWatch Logs from. Use * for all.",
 			},
 			"group": &schema.Schema{
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Default:     "*",
 				Description: "CloudWatch Logs group that contains one or more streams with the same log content",
 			},
 			"stream": &schema.Schema{
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Default:     "*",
 				Description: "CloudWatch Logs stream name (e.g. i-038a3acdf913dd5fa or * to include all streams)",
 			},
 			"source_format": &schema.Schema{
