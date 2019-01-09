@@ -21,10 +21,9 @@ func resourceJobAWSCloudWatch() *schema.Resource {
 				Description: "The unique ID identifying this job resource.",
 			},
 			"sensor": &schema.Schema{
-				Type:         schema.TypeString,
-				Required:     true,
-				Description:  "The ID of the sensor which should be used to run this job.",
-				ValidateFunc: validateJobSensor,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The name of the sensor which should be used to run this job.",
 			},
 			"schedule": &schema.Schema{
 				Type:        schema.TypeString,
@@ -79,7 +78,10 @@ func resourceJobAWSCloudWatch() *schema.Resource {
 
 func resourceJobAWSCloudWatchCreate(d *schema.ResourceData, m interface{}) error {
 
-	job := expandJobAWSCloudWatch(d)
+	job, err := expandJobAWSCloudWatch(d, m.(*alienvault.Client))
+	if err != nil {
+		return err
+	}
 
 	if err := m.(*alienvault.Client).CreateAWSCloudWatchJob(job); err != nil {
 		return err
@@ -98,13 +100,15 @@ func resourceJobAWSCloudWatchRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	flattenJobAWSCloudWatch(job, d)
-	return nil
+	return flattenJobAWSCloudWatch(job, d, m.(*alienvault.Client))
 }
 
 func resourceJobAWSCloudWatchUpdate(d *schema.ResourceData, m interface{}) error {
 
-	job := expandJobAWSCloudWatch(d)
+	job, err := expandJobAWSCloudWatch(d, m.(*alienvault.Client))
+	if err != nil {
+		return err
+	}
 	if err := m.(*alienvault.Client).UpdateAWSCloudWatchJob(job); err != nil {
 		return err
 	}
@@ -113,11 +117,14 @@ func resourceJobAWSCloudWatchUpdate(d *schema.ResourceData, m interface{}) error
 }
 
 func resourceJobAWSCloudWatchDelete(d *schema.ResourceData, m interface{}) error {
-	job := expandJobAWSCloudWatch(d)
+	job, err := expandJobAWSCloudWatch(d, m.(*alienvault.Client))
+	if err != nil {
+		return err
+	}
 	return m.(*alienvault.Client).DeleteAWSCloudWatchJob(job)
 }
 
-func flattenJobAWSCloudWatch(job *alienvault.AWSCloudWatchJob, d *schema.ResourceData) {
+func flattenJobAWSCloudWatch(job *alienvault.AWSCloudWatchJob, d *schema.ResourceData, client *alienvault.Client) error {
 
 	if job.UUID != "" {
 		d.SetId(job.UUID)
@@ -135,16 +142,49 @@ func flattenJobAWSCloudWatch(job *alienvault.AWSCloudWatchJob, d *schema.Resourc
 	d.Set("plugin", job.Params.Plugin)
 
 	d.Set("name", job.Name)
-	d.Set("sensor", job.SensorID)
+
+	sensors, err := client.GetSensors()
+	if err != nil {
+		return err
+	}
+
+	for _, sensor := range sensors {
+		if sensor.ID == job.SensorID {
+			d.Set("sensor", sensor.Name)
+			break
+		}
+	}
+
 	d.Set("schedule", translateScheduleToTF(job.Schedule))
 	d.Set("disabled", job.Disabled)
+
+	return nil
 }
 
-func expandJobAWSCloudWatch(d *schema.ResourceData) *alienvault.AWSCloudWatchJob {
+func expandJobAWSCloudWatch(d *schema.ResourceData, client *alienvault.Client) (*alienvault.AWSCloudWatchJob, error) {
 
 	job := &alienvault.AWSCloudWatchJob{}
 	job.Name = d.Get("name").(string)
-	job.SensorID = d.Get("sensor").(string)
+
+	sensors, err := client.GetSensors()
+	if err != nil {
+		return nil, err
+	}
+
+	specifiedSensorName := d.Get("sensor").(string)
+	found := false
+	for _, sensor := range sensors {
+		if sensor.Name == specifiedSensorName {
+			job.SensorID = sensor.ID
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return nil, fmt.Errorf("Cannot find sensor with the specified name: '%s'", specifiedSensorName)
+	}
+
 	job.Schedule = translateScheduleFromTF(d.Get("schedule").(string))
 	job.Disabled = d.Get("disabled").(bool)
 	job.Description = d.Get("description").(string)
@@ -162,5 +202,5 @@ func expandJobAWSCloudWatch(d *schema.ResourceData) *alienvault.AWSCloudWatchJob
 		job.UUID = d.Id()
 	}
 
-	return job
+	return job, nil
 }

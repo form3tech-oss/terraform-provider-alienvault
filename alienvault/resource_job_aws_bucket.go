@@ -21,10 +21,9 @@ func resourceJobAWSBucket() *schema.Resource {
 				Description: "The unique ID identifying this job resource.",
 			},
 			"sensor": &schema.Schema{
-				Type:         schema.TypeString,
-				Required:     true,
-				Description:  "The ID of the sensor which should be used to run this job.",
-				ValidateFunc: validateJobSensor,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The name of the sensor which should be used to run this job.",
 			},
 			"schedule": &schema.Schema{
 				Type:        schema.TypeString,
@@ -74,7 +73,10 @@ func resourceJobAWSBucket() *schema.Resource {
 
 func resourceJobAWSBucketCreate(d *schema.ResourceData, m interface{}) error {
 
-	job := expandJobAWSBucket(d)
+	job, err := expandJobAWSBucket(d, m.(*alienvault.Client))
+	if err != nil {
+		return err
+	}
 
 	if err := m.(*alienvault.Client).CreateAWSBucketJob(job); err != nil {
 		return err
@@ -93,13 +95,15 @@ func resourceJobAWSBucketRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	flattenJobAWSBucket(job, d)
-	return nil
+	return flattenJobAWSBucket(job, d, m.(*alienvault.Client))
 }
 
 func resourceJobAWSBucketUpdate(d *schema.ResourceData, m interface{}) error {
 
-	job := expandJobAWSBucket(d)
+	job, err := expandJobAWSBucket(d, m.(*alienvault.Client))
+	if err != nil {
+		return err
+	}
 	if err := m.(*alienvault.Client).UpdateAWSBucketJob(job); err != nil {
 		return err
 	}
@@ -108,11 +112,14 @@ func resourceJobAWSBucketUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceJobAWSBucketDelete(d *schema.ResourceData, m interface{}) error {
-	job := expandJobAWSBucket(d)
+	job, err := expandJobAWSBucket(d, m.(*alienvault.Client))
+	if err != nil {
+		return err
+	}
 	return m.(*alienvault.Client).DeleteAWSBucketJob(job)
 }
 
-func flattenJobAWSBucket(job *alienvault.AWSBucketJob, d *schema.ResourceData) {
+func flattenJobAWSBucket(job *alienvault.AWSBucketJob, d *schema.ResourceData, client *alienvault.Client) error {
 
 	if job.UUID != "" {
 		d.SetId(job.UUID)
@@ -128,17 +135,49 @@ func flattenJobAWSBucket(job *alienvault.AWSBucketJob, d *schema.ResourceData) {
 	d.Set("source_format", job.Params.SourceFormat)
 	d.Set("plugin", job.Params.Plugin)
 
+	sensors, err := client.GetSensors()
+	if err != nil {
+		return err
+	}
+
+	for _, sensor := range sensors {
+		if sensor.ID == job.SensorID {
+			d.Set("sensor", sensor.Name)
+			break
+		}
+	}
+
 	d.Set("name", job.Name)
-	d.Set("sensor", job.SensorID)
 	d.Set("schedule", translateScheduleToTF(job.Schedule))
 	d.Set("disabled", job.Disabled)
+
+	return nil
 }
 
-func expandJobAWSBucket(d *schema.ResourceData) *alienvault.AWSBucketJob {
+func expandJobAWSBucket(d *schema.ResourceData, client *alienvault.Client) (*alienvault.AWSBucketJob, error) {
 
 	job := &alienvault.AWSBucketJob{}
 	job.Name = d.Get("name").(string)
-	job.SensorID = d.Get("sensor").(string)
+
+	sensors, err := client.GetSensors()
+	if err != nil {
+		return nil, err
+	}
+
+	specifiedSensorName := d.Get("sensor").(string)
+	found := false
+	for _, sensor := range sensors {
+		if sensor.Name == specifiedSensorName {
+			job.SensorID = sensor.ID
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return nil, fmt.Errorf("Cannot find sensor with the specified name: '%s'", specifiedSensorName)
+	}
+
 	job.Schedule = translateScheduleFromTF(d.Get("schedule").(string))
 	job.Disabled = d.Get("disabled").(bool)
 	job.Description = d.Get("description").(string)
@@ -158,7 +197,7 @@ func expandJobAWSBucket(d *schema.ResourceData) *alienvault.AWSBucketJob {
 		job.UUID = d.Id()
 	}
 
-	return job
+	return job, nil
 }
 
 var scheduleMap = map[string]alienvault.JobSchedule{

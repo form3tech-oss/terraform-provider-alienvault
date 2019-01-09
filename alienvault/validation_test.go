@@ -42,23 +42,3 @@ func TestJobSourceValidation(t *testing.T) {
 	}
 
 }
-
-func TestJobSensorValidation(t *testing.T) {
-	var flagtests = []struct {
-		in    string
-		valid bool
-	}{
-		{"1a89f4a1-1a81-14d1-1ff1-1ba1ae946771", true},
-		{"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", true},
-		{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", false},
-		{"", false},
-		{"invalid", false},
-	}
-
-	for _, tt := range flagtests {
-		t.Run(tt.in, func(t *testing.T) {
-			_, errors := validateJobSensor(tt.in, "source")
-			assert.Equal(t, tt.valid, len(errors) == 0)
-		})
-	}
-}
