@@ -19,6 +19,12 @@ func resourceSensorKey() *schema.Resource {
 
 func resourceSensorKeyCreate(d *schema.ResourceData, m interface{}) error {
 
+	if ok, err := m.(*alienvault.Client).HasSensorKeyAvailability(); err != nil {
+		return fmt.Errorf("Failed to check for sensor key availability: %s", err)
+	} else if !ok {
+		return fmt.Errorf("Your alienvault license does not allow for the creation of any more sensors/keys")
+	}
+
 	key, err := m.(*alienvault.Client).CreateSensorKey(false)
 	if err != nil {
 		return err

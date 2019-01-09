@@ -165,17 +165,11 @@ func expandJobAWSBucket(d *schema.ResourceData, client *alienvault.Client) (*ali
 	}
 
 	specifiedSensorName := d.Get("sensor").(string)
-	found := false
 	for _, sensor := range sensors {
 		if sensor.Name == specifiedSensorName {
 			job.SensorID = sensor.ID
-			found = true
 			break
 		}
-	}
-
-	if !found {
-		return nil, fmt.Errorf("Cannot find sensor with the specified name: '%s'", specifiedSensorName)
 	}
 
 	job.Schedule = translateScheduleFromTF(d.Get("schedule").(string))

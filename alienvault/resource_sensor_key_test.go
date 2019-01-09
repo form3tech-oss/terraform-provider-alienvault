@@ -17,6 +17,12 @@ const testAccSensorKeyConfig = `
 func TestAccResourceSensorKey(t *testing.T) {
 	var key alienvault.SensorKey
 
+	if ok, err := testAccProvider.Meta().(*alienvault.Client).HasSensorKeyAvailability(); err != nil {
+		t.Fatalf("Failed to check for sensor key availability: %s", err)
+	} else if !ok {
+		t.Skip("Your alienvault license does not allow for the creation of any more sensors/keys")
+	}
+
 	refreshName := "alienvault_sensor_key.test-e2e-sensor-key"
 
 	resource.Test(t, resource.TestCase{
