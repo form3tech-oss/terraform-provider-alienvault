@@ -2,6 +2,7 @@ package alienvault
 
 import (
 	"fmt"
+	"net"
 
 	"github.com/form3tech-oss/alienvault"
 )
@@ -330,6 +331,15 @@ func validateJobSourceFormat(val interface{}, key string) (warns []string, errs 
 	v := val.(string)
 	if v != string(alienvault.JobSourceFormatRaw) && v != string(alienvault.JobSourceFormatSyslog) {
 		errs = append(errs, fmt.Errorf("%q must be either %q or %q, got: %s", key, alienvault.JobSourceFormatRaw, alienvault.JobSourceFormatSyslog, v))
+	}
+	return
+}
+
+func validateIP(val interface{}, key string) (warns []string, errs []error) {
+	v := val.(string)
+	ip := net.ParseIP(v)
+	if ip == nil {
+		errs = append(errs, fmt.Errorf("%q must be a valid IP, got: %s", key, v))
 	}
 	return
 }
