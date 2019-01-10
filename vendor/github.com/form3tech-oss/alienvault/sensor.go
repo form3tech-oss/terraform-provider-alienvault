@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"time"
@@ -29,12 +30,24 @@ type sensorActivation struct {
 	Description string `json:"description"`
 }
 
+type applianceStatusResponse struct {
+	Status applianceStatus `json:"status"`
+}
+
+type applianceStatus string
+
+const (
+	applianceStatusNotConnected applianceStatus = "notConnected"
+)
+
 // SensorStatus refers to whether or not the sensor is ready for jobs. "Ready" indicates that this is so.
 type SensorStatus string
 
 const (
 	// SensorStatusReady indicates sensor is ready for configuration
 	SensorStatusReady SensorStatus = "Ready"
+	// SensorStatusConnectionLost refers to a sensor configuration which has lost contact with the actual appliance, possibly becuse the appliance no longer exists.
+	SensorStatusConnectionLost SensorStatus = "Connection lost"
 )
 
 type sensorSetupPatch struct {
@@ -52,25 +65,46 @@ const (
 // waitForSensorToBeReady blocks until the given sensor is ready. Pass a context with timeout to abort after a set time.
 func (client *Client) waitForSensorToBeReady(ctx context.Context, sensor *Sensor) error {
 
-	ticker := time.NewTicker(time.Second * 10)
+	// this usually takes 10-30 minutes so no need to poll that often
+	ticker := time.NewTicker(time.Second * 30)
 	defer ticker.Stop()
 
 	for {
+
+		s, err := client.GetSensor(sensor.UUID)
+		if err != nil {
+			return err
+		}
+
+		if s.Status == SensorStatusReady {
+			return nil
+		}
+
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("context expired, no longer waiting for sensor to be ready")
+			return ctx.Err()
 		case <-ticker.C:
-			s, err := client.GetSensor(sensor.UUID)
-			if err != nil {
-				return err
-			}
+		}
+	}
 
-			if s.Status == SensorStatusReady {
-				return nil
+}
+
+func (client *Client) sweepSensors() error {
+
+	sensors, err := client.GetSensors()
+	if err != nil {
+		return err
+	}
+
+	for _, sensor := range sensors {
+		if sensor.Status == SensorStatusConnectionLost {
+			if err := client.DeleteSensor(&sensor); err != nil {
+				return err
 			}
 		}
 	}
 
+	return err
 }
 
 // GetSensor returns a specific sensor as identified by the id parameter
@@ -126,25 +160,54 @@ func (client *Client) GetSensors() ([]Sensor, error) {
 // CreateSensorViaAppliance creates a new sensor via the sensor appliance referenced by the provided IP address
 func (client *Client) CreateSensorViaAppliance(ctx context.Context, sensor *Sensor, ip net.IP) error {
 
+	log.Printf("[DEBUG] sweeping dead sensors...")
+
+	// remove any dead sensors to free up license slots
+	if err := client.sweepSensors(); err != nil {
+		return err
+	}
+
+	// AV sometimes takes a few seconds to free up license slots after a sweep for some reason
+	time.Sleep(time.Second * 5)
+
+	log.Printf("[DEBUG] checking license...")
+	if ok, err := client.HasSensorKeyAvailability(); err != nil {
+		return err
+	} else if !ok {
+		return fmt.Errorf("the AlienVault license in use does not allow creation of more sensors")
+	}
+
+	log.Printf("[DEBUG] creating sensor key...")
+
 	// first of all we need to make sure we can get our hands on an ath code (aka sensor key) to activate our new sensor
 	// this may not be possible if we've maxed out the number of sensors on our license, so attempt this first and fail fast
 	key, err := client.CreateSensorKey(false)
 	if err != nil {
 		return err
 	}
+	// ensure the key we create gets deleted if it isn't used for any reason
+	defer func() {
+		_ = client.DeleteSensorKey(key)
+	}()
+
+	log.Printf("[DEBUG] waiting for appliance to be created at %s...", ip.String())
 
 	// wait until the sensor appliance has been created and is running an AV API over HTTP
 	if err := client.waitForSensorApplianceCreation(ctx, ip); err != nil {
 		return err
 	}
 
+	log.Printf("[DEBUG] activating sensor appliance...")
+
 	// the sensor appliance is alive! cool, now we can activate it with our auth code
-	if err := client.activateSensorAppliance(ip, sensor, key); err != nil {
+	if err := client.activateSensorAppliance(ctx, ip, sensor, key); err != nil {
 		return err
 	}
 
 	// hacky wait to ensure sensor is registered on the AV side
 	time.Sleep(time.Second * 10)
+
+	log.Printf("[DEBUG] finding sensor to finish setup for...")
 
 	// TODO: we don't actually  know the ID of our new sensor yet, so until we figure that out, let's just look for a sensor that has an incomplete setupStatus. This is risky...
 	sensors, err := client.GetSensors()
@@ -155,14 +218,20 @@ func (client *Client) CreateSensorViaAppliance(ctx context.Context, sensor *Sens
 	count := 0
 	var createdSensor Sensor
 	for _, s := range sensors {
-		if s.SetupStatus != SensorSetupStatusComplete {
+		if s.SetupStatus != SensorSetupStatusComplete && s.Name == sensor.Name {
 			count++
 			if count > 1 {
-				return fmt.Errorf("failed to complete sensor setup as we found more than one sensor being set up at the same time, and could differentiate between them")
+				return fmt.Errorf("failed to complete sensor setup as we found more than one sensor with the specified name being set up at the same time, and could differentiate between them")
 			}
 			createdSensor = s
 		}
 	}
+
+	if count == 0 {
+		return fmt.Errorf("no sensors found ready to be set up")
+	}
+
+	log.Printf("[DEBUG] completing setup...")
 
 	// we need the ID of the created sensor to complete setup
 	sensor.UUID = createdSensor.UUID
@@ -170,6 +239,8 @@ func (client *Client) CreateSensorViaAppliance(ctx context.Context, sensor *Sens
 	if err := client.completeSetup(&createdSensor); err != nil {
 		return err
 	}
+
+	log.Printf("[DEBUG] waiting for sensor to be live...")
 
 	return client.waitForSensorToBeReady(ctx, sensor)
 }
@@ -186,8 +257,24 @@ func (client *Client) waitForSensorApplianceCreation(ctx context.Context, ip net
 
 	//keep hitting the sensor appliance every 10 seconds until it responds over http, or until context ends
 	for {
-		if resp, err := anonymousClient.Get(url); err == nil && resp.StatusCode == http.StatusOK {
-			return nil
+		resp, err := anonymousClient.Get(url)
+		if err == nil {
+			b, _ := ioutil.ReadAll(resp.Body)
+			if resp.StatusCode == 200 {
+				status := applianceStatusResponse{}
+				if err := json.Unmarshal(b, &status); err == nil {
+					if status.Status == applianceStatusNotConnected {
+						break
+					} else {
+						return fmt.Errorf("Unexpected appliance status: %s", status.Status)
+					}
+				}
+
+			} else {
+				log.Printf("[ERROR] Status response code: %d", resp.StatusCode)
+			}
+		} else {
+			log.Printf("[ERROR] Status check failed: %s", err)
 		}
 
 		select {
@@ -196,9 +283,11 @@ func (client *Client) waitForSensorApplianceCreation(ctx context.Context, ip net
 		case <-ticker.C:
 		}
 	}
+
+	return nil
 }
 
-func (client *Client) activateSensorAppliance(ip net.IP, sensor *Sensor, key *SensorKey) error {
+func (client *Client) activateSensorAppliance(ctx context.Context, ip net.IP, sensor *Sensor, key *SensorKey) error {
 	anonymousClient := &http.Client{
 		Timeout: time.Second * 5,
 	}
@@ -210,22 +299,34 @@ func (client *Client) activateSensorAppliance(ip net.IP, sensor *Sensor, key *Se
 		MasterNode:  client.fqdn,
 	}
 
-	b := new(bytes.Buffer)
-	if err := json.NewEncoder(b).Encode(activationPayload); err != nil {
-		return err
-	}
+	ticker := time.NewTicker(time.Second * 30)
+	defer ticker.Stop()
 
-	resp, err := anonymousClient.Post(fmt.Sprintf("http://%s/api/1.0/connect", ip.String()), "application/json;charset=UTF-8", b)
-	if err != nil {
-		return err
-	}
+	for {
+		b := new(bytes.Buffer)
+		if err := json.NewEncoder(b).Encode(activationPayload); err != nil {
+			return err
+		}
 
-	// todo remove this debug!
-	data, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println(string(data))
+		req, err := http.NewRequest("POST", fmt.Sprintf("http://%s/api/1.0/connect", ip.String()), b)
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Origin", fmt.Sprintf("https://%s", ip.String()))
+		req.Header.Set("Referer", fmt.Sprintf("https://%s/", ip.String()))
+		req.Header.Set("Content-Type", "application/json;charset=UTF-8")
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Unexpected HTTP status code on sensor activation: %d", resp.StatusCode)
+		if resp, err := anonymousClient.Do(req); err == nil {
+			if resp.StatusCode == http.StatusOK {
+				break
+			}
+		}
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+		}
 	}
 
 	return nil

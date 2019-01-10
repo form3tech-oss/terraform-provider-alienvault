@@ -13,24 +13,22 @@ provider "alienvault" {
     password = ""
 }
 
-resource "alienvault_job_aws_bucket" "nginx-logs-bucket-job" {
-    name     = "nginx log collection"
-    sensor   = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-    schedule = "hourly"
-    bucket   = "this-does-not-exist"
-    path     = "/something/logs"
-    source_format = "raw"
-    plugin   = "Nginx"
+resource "alienvault_sensor" "main" {
+  count   = "${var.provision_alienvault_sensor ? 1 : 0}"
+  ip      = "${data.aws_instance.alienvault_sensor.public_ip}"
+  name    = "${var.stack_name}-sensor"
 }
 
-resource "alienvault_job_aws_cloudwatch" "test-e2e-cloudwatch-job" {
-    name = "RDS log collection"
-    sensor = "6a89f4aa-fa8e-44d4-9ffb-9ba1ae946777"
-    schedule = "daily"
-    region = "us-east-1"
-    group = "test-group"
-    stream = "test-stream"
-    source_format = "raw"
-    plugin = "PostgreSQL"
+
+resource "alienvault_job_aws_cloudwatch" "route53_siem" {
+  count         = "${var.provision_alienvault_sensor ? 1 : 0}"
+  name          = "Route53 log collection"
+  sensor        = "${alienvault_sensor.main.id}"
+  schedule      = "hourly"
+  # to log route53 events to cloudwatch, we have to use the us-east1 region
+  region        = "us-east-1"
+  group         = "${aws_cloudwatch_log_group.aws_route53_stack.name}"
+  source_format = "raw"
+  plugin        = "Route 53 DNS Queries"
 }
 ```

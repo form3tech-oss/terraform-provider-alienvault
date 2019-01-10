@@ -32,6 +32,7 @@ func resourceJobAWSCloudWatch() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "The UUID of the sensor which should be used to run this job.",
+				//ForceNew:    true,
 			},
 			"schedule": &schema.Schema{
 				Type:        schema.TypeString,
