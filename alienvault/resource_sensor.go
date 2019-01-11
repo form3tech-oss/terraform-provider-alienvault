@@ -11,6 +11,8 @@ import (
 
 func resourceSensor() *schema.Resource {
 
+	// create time has to take into account the time for the sensor appliance
+	// to be activated and configured, which is usually 20-30m in total...
 	createTime := time.Hour
 
 	return &schema.Resource{
@@ -38,7 +40,7 @@ func resourceSensor() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				Description:  "The public IP address of the sensor",
-				ForceNew:     true, // register new sensor as the instance has changed
+				ForceNew:     true, // register new sensor as the appliance has been recreated/changed
 				ValidateFunc: validateIP,
 			},
 		},

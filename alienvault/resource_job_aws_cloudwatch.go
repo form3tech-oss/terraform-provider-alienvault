@@ -2,7 +2,6 @@ package alienvault
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/form3tech-oss/alienvault"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -10,24 +9,13 @@ import (
 
 func resourceJobAWSCloudWatch() *schema.Resource {
 
-	// long timeout because the sensor can take a loooong time to be ready on creation
-	createTimeout := time.Minute * 30
-
 	return &schema.Resource{
-		Timeouts: &schema.ResourceTimeout{
-			Create: &createTimeout,
-		},
 		Create: resourceJobAWSCloudWatchCreate,
 		Read:   resourceJobAWSCloudWatchRead,
 		Update: resourceJobAWSCloudWatchUpdate,
 		Delete: resourceJobAWSCloudWatchDelete,
 
 		Schema: map[string]*schema.Schema{
-			"uuid": &schema.Schema{
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "The unique ID identifying this job resource.",
-			},
 			"sensor": &schema.Schema{
 				Type:        schema.TypeString,
 				Required:    true,
@@ -74,9 +62,10 @@ func resourceJobAWSCloudWatch() *schema.Resource {
 			},
 			"source_format": &schema.Schema{
 				Type:         schema.TypeString,
-				Required:     true,
+				Optional:     true,
 				Description:  "The source format of the log files. Currently 'raw' or 'syslog'.",
 				ValidateFunc: validateJobSourceFormat,
+				Default:      "raw",
 			},
 			"plugin": &schema.Schema{
 				Type:         schema.TypeString,
@@ -133,7 +122,6 @@ func flattenJobAWSCloudWatch(job *alienvault.AWSCloudWatchJob, d *schema.Resourc
 
 	if job.UUID != "" {
 		d.SetId(job.UUID)
-		d.Set("uuid", job.UUID)
 	}
 
 	if job.Description != "" {

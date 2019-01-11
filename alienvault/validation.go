@@ -314,15 +314,12 @@ var plugins = []string{
 }
 
 func validateJobPlugin(val interface{}, key string) (warns []string, errs []error) {
-
 	v := val.(string)
-
 	for _, plugin := range plugins {
 		if plugin == v {
 			return
 		}
 	}
-
 	errs = append(errs, fmt.Errorf("%q must be a supported plugin, '%s' is not supported", key, v))
 	return
 }

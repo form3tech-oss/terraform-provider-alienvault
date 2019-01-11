@@ -42,3 +42,25 @@ func TestJobSourceValidation(t *testing.T) {
 	}
 
 }
+
+func TestIPValidation(t *testing.T) {
+
+	var flagtests = []struct {
+		in    string
+		valid bool
+	}{
+		{"1.2.3.4", true},
+		{"199.199.199.199", true},
+		{"", false},
+		{"something", false},
+		{"1.1.1", false},
+		{"2001:0db8:85a3:0000:0000:8a2e:0370:7334", true},
+	}
+
+	for _, tt := range flagtests {
+		t.Run(tt.in, func(t *testing.T) {
+			_, errors := validateIP(tt.in, "ip")
+			assert.Equal(t, tt.valid, len(errors) == 0)
+		})
+	}
+}
