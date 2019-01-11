@@ -54,6 +54,11 @@ type sensorSetupPatch struct {
 	SetupStatus SensorSetupStatus `json:"setupStatus"`
 }
 
+type sensorUpdatePatch struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
 // SensorSetupStatus refers to whether or not the sensor has had it's configuration finalised
 type SensorSetupStatus string
 
@@ -181,7 +186,7 @@ func (client *Client) CreateSensorViaAppliance(ctx context.Context, sensor *Sens
 
 	// first of all we need to make sure we can get our hands on an ath code (aka sensor key) to activate our new sensor
 	// this may not be possible if we've maxed out the number of sensors on our license, so attempt this first and fail fast
-	key, err := client.CreateSensorKey(false)
+	key, err := client.CreateSensorKey()
 	if err != nil {
 		return err
 	}
@@ -312,8 +317,8 @@ func (client *Client) activateSensorAppliance(ctx context.Context, ip net.IP, se
 		if err != nil {
 			return err
 		}
-		req.Header.Set("Origin", fmt.Sprintf("https://%s", ip.String()))
-		req.Header.Set("Referer", fmt.Sprintf("https://%s/", ip.String()))
+		req.Header.Set("Origin", fmt.Sprintf("http://%s", ip.String()))
+		req.Header.Set("Referer", fmt.Sprintf("http://%s/", ip.String()))
 		req.Header.Set("Content-Type", "application/json;charset=UTF-8")
 
 		if resp, err := anonymousClient.Do(req); err == nil {
@@ -334,7 +339,31 @@ func (client *Client) activateSensorAppliance(ctx context.Context, ip net.IP, se
 
 // UpdateSensor updates an existing sensor
 func (client *Client) UpdateSensor(sensor *Sensor) error {
-	return fmt.Errorf("Not implemented")
+	sensorPatch := sensorUpdatePatch{
+		Name:        sensor.Name,
+		Description: sensor.Description,
+	}
+
+	data, err := json.Marshal(sensorPatch)
+	if err != nil {
+		return err
+	}
+
+	req, err := client.createRequest("PATCH", fmt.Sprintf("/sensors/%s", sensor.UUID), bytes.NewBuffer(data))
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Unexpected status code for sensor update: %d", resp.StatusCode)
+	}
+
+	return nil
 }
 
 // completeSetup marks a sensor as having it's setup finalised

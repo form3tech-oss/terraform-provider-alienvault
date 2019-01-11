@@ -16,17 +16,7 @@ type SensorKey struct {
 }
 
 // CreateSensorKey will create a new key used to activate a sensor. However, if the useExisting option is used, and an unused key already exists, this will be returned instead.
-func (client *Client) CreateSensorKey(useExisting bool) (*SensorKey, error) {
-
-	if useExisting {
-		existingKeys, err := client.GetSensorKeys()
-		if err != nil {
-			return nil, err
-		}
-		if len(existingKeys) > 0 {
-			return &existingKeys[0], nil
-		}
-	}
+func (client *Client) CreateSensorKey() (*SensorKey, error) {
 
 	req, err := client.createRequest("POST", "/sensors/key", nil)
 	if err != nil {

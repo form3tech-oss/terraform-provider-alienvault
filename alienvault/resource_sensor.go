@@ -2,7 +2,6 @@ package alienvault
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"time"
 
@@ -70,7 +69,9 @@ func resourceSensorCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceSensorUpdate(d *schema.ResourceData, m interface{}) error {
-	return fmt.Errorf("Not implemented")
+	client := m.(*alienvault.Client)
+	sensor := expandSensor(d)
+	return client.UpdateSensor(sensor)
 }
 
 func resourceSensorRead(d *schema.ResourceData, m interface{}) error {
