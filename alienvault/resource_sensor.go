@@ -23,7 +23,9 @@ func resourceSensor() *schema.Resource {
 		Update: resourceSensorUpdate,
 		Read:   resourceSensorRead,
 		Delete: resourceSensorDelete,
-
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
 				Type:        schema.TypeString,
@@ -79,6 +81,7 @@ func resourceSensorUpdate(d *schema.ResourceData, m interface{}) error {
 func resourceSensorRead(d *schema.ResourceData, m interface{}) error {
 	sensor, err := m.(*alienvault.Client).GetSensor(d.Id())
 	if err != nil {
+		d.SetId("")
 		return err
 	}
 	flattenSensor(sensor, d)

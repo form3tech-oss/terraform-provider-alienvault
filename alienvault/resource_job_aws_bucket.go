@@ -14,7 +14,9 @@ func resourceJobAWSBucket() *schema.Resource {
 		Read:   resourceJobAWSBucketRead,
 		Update: resourceJobAWSBucketUpdate,
 		Delete: resourceJobAWSBucketDelete,
-
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 		Schema: map[string]*schema.Schema{
 			"sensor": &schema.Schema{
 				Type:        schema.TypeString,
@@ -89,6 +91,7 @@ func resourceJobAWSBucketCreate(d *schema.ResourceData, m interface{}) error {
 func resourceJobAWSBucketRead(d *schema.ResourceData, m interface{}) error {
 	job, err := m.(*alienvault.Client).GetAWSBucketJob(d.Id())
 	if err != nil {
+		d.SetId("")
 		return err
 	}
 	return flattenJobAWSBucket(job, d)

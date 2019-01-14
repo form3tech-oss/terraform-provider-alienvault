@@ -14,7 +14,9 @@ func resourceJobAWSCloudWatch() *schema.Resource {
 		Read:   resourceJobAWSCloudWatchRead,
 		Update: resourceJobAWSCloudWatchUpdate,
 		Delete: resourceJobAWSCloudWatchDelete,
-
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 		Schema: map[string]*schema.Schema{
 			"sensor": &schema.Schema{
 				Type:        schema.TypeString,
@@ -98,6 +100,7 @@ func resourceJobAWSCloudWatchCreate(d *schema.ResourceData, m interface{}) error
 func resourceJobAWSCloudWatchRead(d *schema.ResourceData, m interface{}) error {
 	job, err := m.(*alienvault.Client).GetAWSCloudWatchJob(d.Id())
 	if err != nil {
+		d.SetId("")
 		return err
 	}
 	return flattenJobAWSCloudWatch(job, d, m.(*alienvault.Client))
