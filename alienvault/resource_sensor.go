@@ -2,6 +2,7 @@ package alienvault
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"time"
 
@@ -42,7 +43,6 @@ func resourceSensor() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				Description:  "The public IP address of the sensor",
-				ForceNew:     true, // register new sensor as the appliance has been recreated/changed
 				ValidateFunc: validateIP,
 			},
 		},
@@ -83,6 +83,13 @@ func resourceSensorRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		d.SetId("")
 		return err
+	}
+	if sensor.Status == alienvault.SensorStatusConnectionLost {
+		d.SetId("")
+		if err := m.(*alienvault.Client).DeleteSensor(sensor); err != nil {
+			return err
+		}
+		return fmt.Errorf("the sensor appliance lost communication with AlienVault - the sensor has been deregistered")
 	}
 	flattenSensor(sensor, d)
 	return nil
