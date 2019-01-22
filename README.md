@@ -65,7 +65,7 @@ A job for retrieving log files from an AWS bucket.
 - `disabled` (Optional) This can be set to "True" to temporarily prevent the job from running.
 - `source_format` (Optional) This should be set to "raw" for raw logs or "syslog" for SysLog files. Defaults to "raw".
 - `plugin` The plugin to use to parse the log files. A list of available plugins can be found further down this page.
-- `bucket` The name of the bucket to use to look for log files.
+- `bucket` The name of the bucket where log files can be found.
 - `path` (Optional) The path within the specified bucket where log files can be found.
 
 ### `alienvault_job_aws_cloudwatch`
