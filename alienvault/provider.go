@@ -2,6 +2,7 @@ package alienvault
 
 import (
     "github.com/hashicorp/terraform/helper/schema"
+    "os"
 )
 
 // Provider makes the AlienVault provider available
@@ -33,7 +34,12 @@ func Provider() *schema.Provider {
                 Type:        schema.TypeBool,
                 Optional:    true,
                 Description: "Skip TLS certificate verification",
-                DefaultFunc: schema.EnvDefaultFunc("ALIENVAULT_SKIP_TLS_VERIFY", false),
+                DefaultFunc: func() (interface{}, error) {
+                    if v := os.Getenv("ALIENVAULT_SKIP_TLS_VERIFY"); v != "" {
+                        return v == "true" || v == "1", nil
+                    }
+                    return false, nil
+                },
             },
         },
         ResourcesMap: map[string]*schema.Resource{
