@@ -33,8 +33,7 @@ func Provider() *schema.Provider {
                 Type:        schema.TypeBool,
                 Optional:    true,
                 Description: "Skip TLS certificate verification",
-                DefaultFunc: schema.EnvDefaultFunc("ALIENVAULT_SKIP_TLS_VERIFY", nil),
-                Default:     false,
+                DefaultFunc: schema.EnvDefaultFunc("ALIENVAULT_SKIP_TLS_VERIFY", false),
             },
         },
         ResourcesMap: map[string]*schema.Resource{
