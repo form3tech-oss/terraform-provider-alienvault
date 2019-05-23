@@ -118,11 +118,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8f90ec64466f1d92f90db2e31093b876ae75e2ddf1738b589108adec09372c76"
+  digest = "1:f324f205973d67fa582dc16ce0a506b44396cb6b8bdb7e07f0fc9cb29562e8af"
   name = "github.com/form3tech-oss/alienvault"
   packages = ["."]
   pruneopts = "UT"
-  revision = "cf2a40d2cb4fa5e0169d2cb0ee60c27a37bff6c0"
+  revision = "d949be6eb53c23a07cda92203ba07e93582ca5a2"
 
 [[projects]]
   digest = "1:4c0989ca0bcd10799064318923b9bc2db6b4d6338dd75f3f2d86c3511aaaf5cf"
