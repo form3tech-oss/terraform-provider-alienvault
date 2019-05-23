@@ -20,9 +20,10 @@ You can specify credentials and your AlienVault fully-qualified domain name in t
 
 ```hcl
 provider "alienvault" {
-    fqdn     = "mycompany.alienvault.cloud"
-    username = "user@email.com"
-    password = "..."
+    fqdn            = "mycompany.alienvault.cloud"
+    username        = "user@email.com"
+    password        = "..."
+    skip_tls_verify = false
 }
 ```
 

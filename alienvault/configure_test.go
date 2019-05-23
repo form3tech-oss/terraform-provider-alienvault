@@ -31,11 +31,15 @@ func TestProviderConfigure(t *testing.T) {
 		"password": &schema.Schema{
 			Type: schema.TypeString,
 		},
+		"skip_tls_verify": &schema.Schema{
+			Type: schema.TypeBool,
+		},
 	}
 	resourceDataMap := map[string]interface{}{
 		"fqdn":     strings.Replace(ts.URL, "https://", "", -1),
 		"username": "something",
 		"password": "something",
+		"skip_tls_verify": "false",
 	}
 	resourceLocalData := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 
