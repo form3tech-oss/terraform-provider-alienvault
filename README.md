@@ -1,6 +1,6 @@
 # AlienVault Terraform Provider
 
-[![Build Status](https://travis-ci.org/form3tech-oss/terraform-provider-alienvault.svg?branch=master)](https://travis-ci.org/form3tech-oss/terraform-provider-alienvault)
+[![Build Status](https://travis-ci.com/form3tech-oss/terraform-provider-alienvault.svg?branch=master)](https://travis-ci.com/form3tech-oss/terraform-provider-alienvault)
 
 Terraform Provider for [AlienVault USM Anywhere](https://www.alienvault.com/products/usm-anywhere).
 
