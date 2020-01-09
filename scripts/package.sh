@@ -2,19 +2,22 @@
 
 set -x
 
-BINARY="terraform-provider-alienvault_${TRAVIS_TAG}"
-GO111MODULE=on
+BINARY="terraform-provider-alienvault_${TRAVIS_TAG}"	BINARY="terraform-provider-alienvault_${TRAVIS_TAG}"
+GO111MODULE=on	GO111MODULE=on
 
-package () {
-  GOOS=$1
-  echo $GOOS
+
+GOOS=darwin GOARCH=amd64 go build -o "${BINARY}"	package () {
+zip "${BINARY}_darwin_amd64.zip" "${BINARY}"	  GOOS=$1
+rm -f "${BINARY}"	  echo $GOOS
+
   dir="${BINARY}_${GOOS}_amd64"
-  mkdir "${dir}"
-  GOOS=$1 GOARCH=amd64 go build -o "${dir}/${BINARY}"
-  zip "${BINARY}_${GOOS}_amd64.zip" -r "${dir}"
+GOOS=linux GOARCH=amd64 go build -o "${BINARY}"	  mkdir "${dir}"
+zip "${BINARY}_linux_amd64.zip" "${BINARY}"	  GOOS=$1 GOARCH=amd64 go build -o "${dir}/${BINARY}"
+rm -f "${BINARY}"	  zip "${BINARY}_${GOOS}_amd64.zip" -r "${dir}"
   rm -rf "./${dir:?}/"
 }
 
-package darwin
-package linux
-package windows
+
+GOOS=windows GOARCH=amd64 go build -o "${BINARY}"	package darwin
+zip "${BINARY}_windows_amd64.zip" "${BINARY}"	package linux
+rm -f "${BINARY}"
