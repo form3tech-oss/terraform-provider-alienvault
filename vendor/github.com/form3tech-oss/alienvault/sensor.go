@@ -15,11 +15,12 @@ import (
 // Sensor is a machine which gathers event data from your infrastrcture and absorbs it into the AV system
 type Sensor struct {
 	// Annoyingly, AV have two fields ID and UUID which both appear to be a primary key - but it is actually UUID that is used in APi calls and referenced in other resources. ID appears unused.
-	UUID        string            `json:"uuid,omitempty"`
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Status      SensorStatus      `json:"status"`
-	SetupStatus SensorSetupStatus `json:"setupStatus"`
+	UUID           string            `json:"uuid,omitempty"`
+	Name           string            `json:"name"`
+	Description    string            `json:"description"`
+	ActivationCode string            `json:"activation_code"`
+	Status         SensorStatus      `json:"status"`
+	SetupStatus    SensorSetupStatus `json:"setupStatus"`
 }
 
 type sensorActivation struct {
@@ -175,25 +176,33 @@ func (client *Client) CreateSensorViaAppliance(ctx context.Context, sensor *Sens
 	// AV sometimes takes a few seconds to free up license slots after a sweep for some reason
 	time.Sleep(time.Second * 5)
 
-	log.Printf("[DEBUG] checking license...")
-	if ok, err := client.HasSensorKeyAvailability(); err != nil {
-		return err
-	} else if !ok {
-		return fmt.Errorf("the AlienVault license in use does not allow creation of more sensors")
-	}
+	activationCode := sensor.ActivationCode
 
-	log.Printf("[DEBUG] creating sensor key...")
+	if activationCode == "" {
 
-	// first of all we need to make sure we can get our hands on an ath code (aka sensor key) to activate our new sensor
-	// this may not be possible if we've maxed out the number of sensors on our license, so attempt this first and fail fast
-	key, err := client.CreateSensorKey()
-	if err != nil {
-		return err
+		log.Printf("[DEBUG] checking license...")
+		if ok, err := client.HasSensorKeyAvailability(); err != nil {
+			return err
+		} else if !ok {
+			return fmt.Errorf("the AlienVault license in use does not allow creation of more sensors")
+		}
+
+		log.Printf("[DEBUG] creating sensor key...")
+
+		// first of all we need to make sure we can get our hands on an ath code (aka sensor key) to activate our new sensor
+		// this may not be possible if we've maxed out the number of sensors on our license, so attempt this first and fail fast
+		var err error
+		key, err := client.CreateSensorKey()
+		if err != nil {
+			return err
+		}
+		// ensure the key we create gets deleted if it isn't used for any reason
+		defer func() {
+			_ = client.DeleteSensorKey(key)
+		}()
+
+		activationCode = key.ID
 	}
-	// ensure the key we create gets deleted if it isn't used for any reason
-	defer func() {
-		_ = client.DeleteSensorKey(key)
-	}()
 
 	log.Printf("[DEBUG] waiting for appliance to be created at %s...", ip.String())
 
@@ -205,7 +214,7 @@ func (client *Client) CreateSensorViaAppliance(ctx context.Context, sensor *Sens
 	log.Printf("[DEBUG] activating sensor appliance...")
 
 	// the sensor appliance is alive! cool, now we can activate it with our auth code
-	if err := client.activateSensorAppliance(ctx, ip, sensor, key); err != nil {
+	if err := client.activateSensorAppliance(ctx, ip, sensor, activationCode); err != nil {
 		return err
 	}
 
@@ -292,7 +301,7 @@ func (client *Client) waitForSensorApplianceCreation(ctx context.Context, ip net
 	return nil
 }
 
-func (client *Client) activateSensorAppliance(ctx context.Context, ip net.IP, sensor *Sensor, key *SensorKey) error {
+func (client *Client) activateSensorAppliance(ctx context.Context, ip net.IP, sensor *Sensor, activationCode string) error {
 	anonymousClient := &http.Client{
 		Timeout: time.Second * 5,
 	}
@@ -300,7 +309,7 @@ func (client *Client) activateSensorAppliance(ctx context.Context, ip net.IP, se
 	activationPayload := sensorActivation{
 		Name:        sensor.Name,
 		Description: sensor.Description,
-		SensorKey:   key.ID,
+		SensorKey:   activationCode,
 		MasterNode:  client.fqdn,
 	}
 

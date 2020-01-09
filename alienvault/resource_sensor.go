@@ -45,6 +45,11 @@ func resourceSensor() *schema.Resource {
 				Description:  "The public IP address of the sensor",
 				ValidateFunc: validateIP,
 			},
+			"activation_code": &schema.Schema{
+				Type:         schema.TypeString,
+				Optional:     true,
+				Description:  "The activation code of the sensor",
+			},
 		},
 	}
 }
@@ -104,12 +109,14 @@ func flattenSensor(sensor *alienvault.Sensor, d *schema.ResourceData) {
 	d.SetId(sensor.UUID)
 	d.Set("name", sensor.Name)
 	d.Set("description", sensor.Description)
+	d.Set("activation_code", sensor.ActivationCode)
 }
 
 func expandSensor(d *schema.ResourceData) *alienvault.Sensor {
 	sensor := &alienvault.Sensor{}
 	sensor.UUID = d.Id()
 	sensor.Name = d.Get("name").(string)
+	sensor.ActivationCode = d.Get("activation_code").(string)
 	if description, ok := d.GetOk("description"); ok {
 		sensor.Description = description.(string)
 	}
