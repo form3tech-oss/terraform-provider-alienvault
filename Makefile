@@ -1,17 +1,14 @@
-default : vet test build
+default: test
 
-.PHONY: build
-build:
-	go build
+.PHONY: package
+package:
+	./scripts/package.sh
 
 .PHONY: vet
 vet:
 	go vet ./...
 
-.PHONY: test
+.PHONY: vet
 test:
 	go test -v ./...
 
-.PHONY: release
-release:
-	@curl -sL http://git.io/goreleaser | bash
