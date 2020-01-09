@@ -1,15 +1,20 @@
 #!/bin/bash
+
+set -x
+
 BINARY="terraform-provider-alienvault_${TRAVIS_TAG}"
 GO111MODULE=on
 
-GOOS=darwin GOARCH=amd64 go build -o "${BINARY}"
-zip "${BINARY}_darwin_amd64.zip" "${BINARY}"
-rm -f "${BINARY}"
+package () {
+  GOOS=$1
+  echo $GOOS
+  dir="${BINARY}_${GOOS}_amd64"
+  mkdir "${dir}"
+  GOOS=$1 GOARCH=amd64 go build -o "${dir}/${BINARY}"
+  zip "${BINARY}_${GOOS}_amd64.zip" -r "${dir}"
+  rm -rf "./${dir:?}/"
+}
 
-GOOS=linux GOARCH=amd64 go build -o "${BINARY}"
-zip "${BINARY}_linux_amd64.zip" "${BINARY}"
-rm -f "${BINARY}"
-
-GOOS=windows GOARCH=amd64 go build -o "${BINARY}"
-zip "${BINARY}_windows_amd64.zip" "${BINARY}"
-rm -f "${BINARY}"
+package darwin
+package linux
+package windows
