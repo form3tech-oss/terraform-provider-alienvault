@@ -14,5 +14,4 @@ test:
 
 .PHONY: release
 release:
-	go get github.com/goreleaser/goreleaser;
-	goreleaser;
+	@curl -sL http://git.io/goreleaser | bash
