@@ -73,7 +73,7 @@ func resourceSensorCreate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	d.SetId(sensor.V1ID)
+	d.SetId(sensor.ID())
 	return resourceSensorRead(d, m)
 }
 
@@ -106,7 +106,7 @@ func resourceSensorDelete(d *schema.ResourceData, m interface{}) error {
 }
 
 func flattenSensor(sensor *alienvault.Sensor, d *schema.ResourceData) {
-	d.SetId(sensor.V1ID)
+	d.SetId(sensor.ID())
 	d.Set("name", sensor.Name)
 	d.Set("description", sensor.Description)
 	d.Set("activation_code", sensor.ActivationCode)
@@ -115,6 +115,7 @@ func flattenSensor(sensor *alienvault.Sensor, d *schema.ResourceData) {
 func expandSensor(d *schema.ResourceData) *alienvault.Sensor {
 	sensor := &alienvault.Sensor{}
 	sensor.V1ID = d.Id()
+	sensor.V2ID = d.Id()
 	sensor.Name = d.Get("name").(string)
 	sensor.ActivationCode = d.Get("activation_code").(string)
 	if description, ok := d.GetOk("description"); ok {
