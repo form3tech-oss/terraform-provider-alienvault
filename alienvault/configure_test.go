@@ -34,6 +34,9 @@ func TestProviderConfigure(t *testing.T) {
 		"skip_tls_verify": &schema.Schema{
 			Type: schema.TypeBool,
 		},
+		"api_version": {
+				Type: schema.TypeInt,
+		},
 	}
 	resourceDataMap := map[string]interface{}{
 		"fqdn":     strings.Replace(ts.URL, "https://", "", -1),
