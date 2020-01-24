@@ -117,12 +117,12 @@
   version = "v1.7.0"
 
 [[projects]]
-  digest = "1:4ce4ee03d4fbcea802a3c8a019062c5d570db36310f7c02c0c3ef0e5938f1757"
+  digest = "1:7e244bbdeb6cb460a282ae783cfb9a588da6427e2ad786cace221bef730a2cbd"
   name = "github.com/form3tech-oss/alienvault"
   packages = ["."]
   pruneopts = "UT"
-  revision = "7760ade89e2656489fca053c984aa57788927814"
-  version = "v0.1.0"
+  revision = "104acadeee04c02b0dafa28db1ed32c559bba6b7"
+  version = "v0.3.0"
 
 [[projects]]
   digest = "1:4c0989ca0bcd10799064318923b9bc2db6b4d6338dd75f3f2d86c3511aaaf5cf"
