@@ -16,9 +16,9 @@ func Provider() *schema.Provider {
                 DefaultFunc: schema.EnvDefaultFunc("ALIENVAULT_FQDN", nil),
                 Sensitive:   true,
             },
-            "version": {
+            "api_version": {
                 Type:        schema.TypeInt,
-                Description: "The login version you are using, normally 1 or 2",
+                Description: "The api version you are using, normally 1 or 2",
                 DefaultFunc: schema.EnvDefaultFunc("ALEINVAULT_VERSION", 1),
                 Optional:    true,
             },
