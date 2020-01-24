@@ -106,7 +106,7 @@ func resourceSensorDelete(d *schema.ResourceData, m interface{}) error {
 }
 
 func flattenSensor(sensor *alienvault.Sensor, d *schema.ResourceData) {
-	d.SetId(sensor.V1ID)
+	d.SetId(sensor.ID())
 	d.Set("name", sensor.Name)
 	d.Set("description", sensor.Description)
 	d.Set("activation_code", sensor.ActivationCode)
