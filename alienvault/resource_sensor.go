@@ -115,6 +115,7 @@ func flattenSensor(sensor *alienvault.Sensor, d *schema.ResourceData) {
 func expandSensor(d *schema.ResourceData) *alienvault.Sensor {
 	sensor := &alienvault.Sensor{}
 	sensor.V1ID = d.Id()
+	sensor.V2ID = d.Id()
 	sensor.Name = d.Get("name").(string)
 	sensor.ActivationCode = d.Get("activation_code").(string)
 	if description, ok := d.GetOk("description"); ok {
