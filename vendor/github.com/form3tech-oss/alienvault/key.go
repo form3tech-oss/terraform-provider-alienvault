@@ -28,7 +28,7 @@ func (client *Client) CreateSensorKey() (*SensorKey, error) {
 		return nil, err
 	}
 
-	key := SensorKey{}
+	var key SensorKey
 	if err := json.NewDecoder(resp.Body).Decode(&key); err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (client *Client) GetSensorKeys() ([]SensorKey, error) {
 		return nil, err
 	}
 
-	keys := []SensorKey{}
+	var keys []SensorKey
 	if err := json.NewDecoder(resp.Body).Decode(&keys); err != nil {
 		return nil, err
 	}
@@ -92,8 +92,8 @@ func (client *Client) DeleteSensorKey(key *SensorKey) error {
 		return err
 	}
 
-	if resp.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("Unexpected response code when deleting key: %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected response code when deleting key: %d", resp.StatusCode)
 	}
 
 	return nil

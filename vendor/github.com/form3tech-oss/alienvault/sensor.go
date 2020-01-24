@@ -14,8 +14,9 @@ import (
 
 // Sensor is a machine which gathers event data from your infrastrcture and absorbs it into the AV system
 type Sensor struct {
-	// Annoyingly, AV have two fields ID and UUID which both appear to be a primary key - but it is actually UUID that is used in APi calls and referenced in other resources. ID appears unused.
-	UUID           string            `json:"uuid,omitempty"`
+	// Annoyingly, AV have two fields ID and UUID which both appear to be a primary key - UUID is used in v1 calls, ID in v2
+	V1ID           string            `json:"uuid,omitempty"`
+	V2ID           string            `json:"id,omitempty"`
 	Name           string            `json:"name"`
 	Description    string            `json:"description"`
 	ActivationCode string            `json:"activation_code"`
@@ -33,6 +34,13 @@ type sensorActivation struct {
 
 type applianceStatusResponse struct {
 	Status applianceStatus `json:"status"`
+}
+
+type v2SensorList struct {
+	Embedded v2InnerSensorList `json:"_embedded"`
+}
+type v2InnerSensorList struct {
+	Sensors []Sensor `json:"sensors"`
 }
 
 type applianceStatus string
@@ -68,6 +76,14 @@ const (
 	SensorSetupStatusComplete SensorSetupStatus = "Complete"
 )
 
+func (sensor *Sensor) ID() string {
+	// v2 API does not include v1 ID
+	if sensor.V1ID != "" {
+		return sensor.V1ID
+	}
+	return sensor.V2ID
+}
+
 // waitForSensorToBeReady blocks until the given sensor is ready. Pass a context with timeout to abort after a set time.
 func (client *Client) waitForSensorToBeReady(ctx context.Context, sensor *Sensor) error {
 
@@ -77,7 +93,7 @@ func (client *Client) waitForSensorToBeReady(ctx context.Context, sensor *Sensor
 
 	for {
 
-		s, err := client.GetSensor(sensor.UUID)
+		s, err := client.GetSensor(sensor.ID())
 		if err != nil {
 			return err
 		}
@@ -116,29 +132,18 @@ func (client *Client) sweepSensors() error {
 // GetSensor returns a specific sensor as identified by the id parameter
 func (client *Client) GetSensor(id string) (*Sensor, error) {
 
-	req, err := client.createRequest("GET", "/sensors", nil)
+	sensors, err := client.GetSensors()
 	if err != nil {
-		return nil, err
-	}
-
-	resp, err := client.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	sensors := []Sensor{}
-
-	if err := json.NewDecoder(resp.Body).Decode(&sensors); err != nil {
 		return nil, err
 	}
 
 	for _, sensor := range sensors {
-		if sensor.UUID == id {
+		if sensor.V1ID == id || sensor.V2ID == id {
 			return &sensor, nil
 		}
 	}
 
-	return nil, fmt.Errorf("Sensor %s could not be found", id)
+	return nil, fmt.Errorf("sensor %s could not be found", id)
 }
 
 // GetSensors returns a list of all sensors
@@ -153,11 +158,23 @@ func (client *Client) GetSensors() ([]Sensor, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
-	sensors := []Sensor{}
+	var sensors []Sensor
 
-	if err := json.NewDecoder(resp.Body).Decode(&sensors); err != nil {
-		return nil, err
+	switch client.version {
+	case 1:
+		if err := json.NewDecoder(resp.Body).Decode(&sensors); err != nil {
+			return nil, err
+		}
+	case 2:
+		list := v2SensorList{}
+		if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
+			return nil, err
+		}
+		sensors = list.Embedded.Sensors
+	default:
+		return nil, fmt.Errorf("unsupported client version: %d", client.version)
 	}
 
 	return sensors, nil
@@ -248,7 +265,8 @@ func (client *Client) CreateSensorViaAppliance(ctx context.Context, sensor *Sens
 	log.Printf("[DEBUG] completing setup...")
 
 	// we need the ID of the created sensor to complete setup
-	sensor.UUID = createdSensor.UUID
+	sensor.V1ID = createdSensor.V1ID
+	sensor.V2ID = createdSensor.V2ID
 
 	if err := client.completeSetup(&createdSensor); err != nil {
 		return err
@@ -273,6 +291,7 @@ func (client *Client) waitForSensorApplianceCreation(ctx context.Context, ip net
 	for {
 		resp, err := anonymousClient.Get(url)
 		if err == nil {
+			defer resp.Body.Close()
 			b, _ := ioutil.ReadAll(resp.Body)
 			if resp.StatusCode == 200 {
 				status := applianceStatusResponse{}
@@ -331,6 +350,7 @@ func (client *Client) activateSensorAppliance(ctx context.Context, ip net.IP, se
 		req.Header.Set("Content-Type", "application/json;charset=UTF-8")
 
 		if resp, err := anonymousClient.Do(req); err == nil {
+			defer resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {
 				break
 			}
@@ -358,7 +378,7 @@ func (client *Client) UpdateSensor(sensor *Sensor) error {
 		return err
 	}
 
-	req, err := client.createRequest("PATCH", fmt.Sprintf("/sensors/%s", sensor.UUID), bytes.NewBuffer(data))
+	req, err := client.createRequest("PATCH", fmt.Sprintf("/sensors/%s", sensor.ID()), bytes.NewBuffer(data))
 	if err != nil {
 		return err
 	}
@@ -367,9 +387,10 @@ func (client *Client) UpdateSensor(sensor *Sensor) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("Unexpected status code for sensor update: %d", resp.StatusCode)
+		return fmt.Errorf("unexpected status code for sensor update: %d", resp.StatusCode)
 	}
 
 	return nil
@@ -387,7 +408,7 @@ func (client *Client) completeSetup(sensor *Sensor) error {
 		return err
 	}
 
-	req, err := client.createRequest("PATCH", fmt.Sprintf("/sensors/%s", sensor.UUID), bytes.NewBuffer(data))
+	req, err := client.createRequest("PATCH", fmt.Sprintf("/sensors/%s", sensor.ID()), bytes.NewBuffer(data))
 	if err != nil {
 		return err
 	}
@@ -396,9 +417,10 @@ func (client *Client) completeSetup(sensor *Sensor) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("Unexpected status code for sensor setup finalisation: %d", resp.StatusCode)
+		return fmt.Errorf("unexpected status code for sensor setup finalisation: %d", resp.StatusCode)
 	}
 
 	return nil
@@ -407,7 +429,7 @@ func (client *Client) completeSetup(sensor *Sensor) error {
 // DeleteSensor deletes an existing sensor
 func (client *Client) DeleteSensor(sensor *Sensor) error {
 
-	req, err := client.createRequest("DELETE", fmt.Sprintf("/sensors/%s", sensor.UUID), nil)
+	req, err := client.createRequest("DELETE", fmt.Sprintf("/sensors/%s", sensor.ID()), nil)
 	if err != nil {
 		return err
 	}
@@ -416,9 +438,10 @@ func (client *Client) DeleteSensor(sensor *Sensor) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("Unexpected status code on delete: %d", resp.StatusCode)
+		return fmt.Errorf("unexpected status code on delete: %d", resp.StatusCode)
 	}
 
 	return nil

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 )
 
 // AWSBucketJob is a scheduled job for retrieving logs from an S3 bucket
@@ -39,13 +40,13 @@ func (client *Client) GetAWSBucketJobs() ([]AWSBucketJob, error) {
 		return nil, err
 	}
 
-	jobs := []AWSBucketJob{}
+	var jobs []AWSBucketJob
 
 	if err := json.NewDecoder(resp.Body).Decode(&jobs); err != nil {
 		return nil, err
 	}
 
-	outputJobs := []AWSBucketJob{}
+	var outputJobs []AWSBucketJob
 
 	for _, job := range jobs {
 		if job.Action == JobActionMonitorBucket {
@@ -72,7 +73,7 @@ func (client *Client) GetAWSBucketJob(uuid string) (*AWSBucketJob, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("Job %s could not be found", uuid)
+	return nil, fmt.Errorf("job %s could not be found", uuid)
 }
 
 // CreateAWSBucketJob creates a new bucket job
@@ -156,8 +157,8 @@ func (client *Client) DeleteAWSBucketJob(j *AWSBucketJob) error {
 		return err
 	}
 
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("Unexpected status code on delete: %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code on delete: %d", resp.StatusCode)
 	}
 
 	return nil

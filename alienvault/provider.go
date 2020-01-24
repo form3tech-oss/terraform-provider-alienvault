@@ -9,28 +9,34 @@ import (
 func Provider() *schema.Provider {
     return &schema.Provider{
         Schema: map[string]*schema.Schema{
-            "fqdn": &schema.Schema{
+            "fqdn": {
                 Type:        schema.TypeString,
                 Required:    true,
                 Description: "The fully qualified domain name for your AlienVault instance e.g. example.alienvault.cloud",
                 DefaultFunc: schema.EnvDefaultFunc("ALIENVAULT_FQDN", nil),
                 Sensitive:   true,
             },
-            "username": &schema.Schema{
+            "api_version": {
+                Type:        schema.TypeInt,
+                Description: "The api version you are using, normally 1 or 2",
+                Default: 1,
+                Optional:    true,
+            },
+            "username": {
                 Type:        schema.TypeString,
                 Required:    true,
                 Description: "AV username",
                 DefaultFunc: schema.EnvDefaultFunc("ALIENVAULT_USERNAME", nil),
                 Sensitive:   true,
             },
-            "password": &schema.Schema{
+            "password": {
                 Type:        schema.TypeString,
                 Required:    true,
                 Description: "AV password",
                 DefaultFunc: schema.EnvDefaultFunc("ALIENVAULT_PASSWORD", nil),
                 Sensitive:   true,
             },
-            "skip_tls_verify": &schema.Schema{
+            "skip_tls_verify": {
                 Type:        schema.TypeBool,
                 Optional:    true,
                 Description: "Skip TLS certificate verification",

@@ -1,6 +1,6 @@
 language: go
 go:
-- 1.11.x
+- 1.13.x
 env:
   global:
   - TF_ACC=1
@@ -9,26 +9,8 @@ env:
   - secure: J7j5mhXkCrQBWXiekH/fqavq+64kPs4fKSVYR/UydJ+jYcdV/J4EeUQdZNA723JCYf6nSaeTOH4rQLvRsui+AVTk9kagLuA8G8Xw1MDG6YHaefqBPTySuqy3qErifYbStr0ohQvsShTeAj0NdGdMJKgGMVMDoAyL3CLLqaxaBWVuWnbuHHkOmUacNwplTay4MlpbhuN3CmHXurMuroY9OKNEN3AajcOWADA4yOx+N2lwDLBf9juneoAfJ/6AhsXHbWXW19okLWn2StNd1zR/IsZU7pMDhWEYFawzrJro5XEb7+hgK4ZNdlUDVi7/MlLk9X/u61whUL39oEJuP9s61HUYiB3cttwm4x8FvMPczGw2YRBy1thNK4leZA5h2r38leTGmRNbPFMR5EZtzVzaHesmeNpaCMNZXuq+Y/eN/pd88nDuOmOJ6YfGUieKCrkrsoVe/P7T95HFUfbLZ5xcYabqx6xswhyLta9xj4T/kBqdbuGN8PttIRZu0hwXreFaoxV0mH08ZTtm2YLft6/hgmZ6lZtYZLB8Uh6asjYyo7hRRm0VGAuLGB4W0My4SbAXVOubdynnVLF3IWzP9777lClDdX2vDztqGVVK6Kba/0jgdcSX3FnK0Ckt3QklYk70lZOVZWmLmgFiKvpzjPvtYzGGzit5gR9sGy30A2kCn9I=
   - secure: j2gS94VNVicQ4yPlyfSqmCpmZ/EpbplmuUG4pL7UVLaOIThMO9s6QZFXSmfgalAu5wtqaC7s8sWUme8bOgtSJzN+TOZbEKpVmdq6MkRd4M+84AlHFu59NAAkqjCYi8bwpr9FCIhByNAb93EKCU8yS9srHjgZZUxosZkSgplT3bC7oGmWVuasrX/SGLYSUZNcz0Mjjk8kbvrmndDG8aeUcbAdekNVSRwGzc5ZwmBdj81nwswa2Yq1Vbm++mEmXE0f6cAszS30ifYjp81+Kijp7/xZZKwvz+4Q2HnT6rY3XV7tyAAlr5uGVs137syBkImcAhNph3LNvqsECiJ9wk48mv7DhESQvbpCWIp0yUMziVuj7g6Iwip7qGes2tTdzWajTZ/rP9zO+HOdoVpMdtuIOlx/Ecs+gzwcFvVUZOzugnl+4mZnzDeG4R/6s89z8Lh0OCgzfls58yzpEEBUt7yWoyAmPvm6EYMBH0OimftEABsB9K/z94lspoBPUy4HnAWrLqHWAYUBnhuZXfy7VO2v9aIjSM74o8DdutPfErD2mQe9JZTeU80P/9rsaFtE7Romv9LEXJzBg2jucvAv4FmLVqTRwXucSz/1euKYAyGJkJElCGOCYwp8mQpDOPDqpTpUk6yZOni0W0CkgWau+fD/bRnkjjRyRDj2anQitMUM/J0=
   - secure: OihOsFf4xe0CenuanxpurE11A+JeAv5Rdz8bLU0BznUt85v4PJEzqWBxRdHTs76IydA3vNa96WMEUvWMCsyknsmB9pQ6aD1Iofun25B2luI7mbQA1RUgy1rTT0QCbrlo2HlURRBTuVvwc6p2rb0+Wg+ODfLaESuvwBaPoT8dfyo9PmZCAS5nOlWJHImH0LESH8zpIiwLzhvNVP4fPDZep/ZjBxJzp3lhRWy/ls8+b6OiDEoQkhOOEjLQJeojmHga4EB0T2iMB2LTzPgRMbFT/t64z62QRfIAsfH3CwlHpgwJqdhnepo/7Ptn6QR4ZnnCLxLXTMRLPsylWQuUT1+2WW5rfJiRNk1G/bUohHbpXXZ4E3o5B0tFLYpbuzJRoDhJy/K98BT1voDrV4RgRDEPizmF6NJiYOm12pCXKb7nfMCgS1I9LVKbH+22ZdIMJ3AWFT6nHxy52I5x6A2w93Tct59gINI4HI8uOnEeNQOaKQMgpovXRHj/iZqjnalHVcz4k7ntWDwNqw1MkI8JMwtpx/dNcAGLVN/qIpSjknAyPBCWD4M54E2PdyXR5FNB5A/56hUic4iraNuPvXo8DVRoJ3US8FIW+4nkOsH4gg6RQwamzuV84Cvt6IaNAKnW8gruWjoR2GPOlw6OXJrjqgl4cY/sCyzu3EgwaESGymvIDlU=
-jobs:
-  include:
-  - stage: test
-    name: Run tests
-    script:
-    - make test
-  - stage: package
-    name: Package
-    script:
-      - make package
-    deploy:
-      provider: releases
-      skip_cleanup: true
-      name: "$TRAVIS_TAG"
-      file:
-      - terraform-provider-alienvault_${TRAVIS_TAG}_linux_amd64.zip
-      - terraform-provider-alienvault_${TRAVIS_TAG}_darwin_amd64.zip
-      - terraform-provider-alienvault_${TRAVIS_TAG}_windows_amd64.zip
-      api_key:
-        secure: QRSprDZq1BScT5H4ZjRTadp0A4oEu0HrXhzSBcn1VVEvHzrWk1+RjGNPxn3IcgPA5ZQ3CdQyum19QLagLNy0SoVFnp+HdpLaOk/Tj7NhzQyNXDju1bD2LGhS5M3Ldm8K62+NGVP1EPhLbSi3nP38n4ZdhDUBVqosaf4Z7rlwnra4E2JFwjpkFosvBTEEQjNIuUr6fJfou8F68W9+hXYr+pTxpgAsymVuJfpdvdoJlO7becSw502UnVJ9pTMrx/SH2/4AyBnHXdDA28r16hkwfaVKZ3UoyyivF9TdKLCUHO2xnWoG5cFXhNvZo04/4OoXYLWw2FkWe/WdSxCOInU2PK0WY6X7v5so9r/WV+LcOYdbn7R7j+UWT7USusHfIBrIBDuaoBFaNXrrYibw2MCgMzD7i3HZ0ET7VZNqoYV43uZiNjPX3lWwtX7feW8TtRHRPM8m4S+ceyBMOCPUuPbKI7UTskPPI4xrD2zBlSnJVzeCMApv3bSo7v96+IV+Kr6GQx2q1VWtaFyH+6nalnwo0kS6IwIPopxGIAstvxiTDKPcgGc7SmRmYdUe9yusICxXdE8uZZzlkf5Btl6SnF468OzbrET6VgJg8O53LcmppVsxdvaxlGOn8Iv6NFXO5KHgJH2DARYzJoDA6HKBlKJf5A7W2xPmqTdV48agxkyaSYQ=
-      on:
-        repo: form3tech-oss/terraform-provider-alienvault
-        tags: true
+
+after_success:
+- make release
+
+

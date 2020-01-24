@@ -40,13 +40,13 @@ func (client *Client) GetAWSCloudWatchJobs() ([]AWSCloudWatchJob, error) {
 		return nil, err
 	}
 
-	jobs := []AWSCloudWatchJob{}
+	var jobs []AWSCloudWatchJob
 
 	if err := json.NewDecoder(resp.Body).Decode(&jobs); err != nil {
 		return nil, err
 	}
 
-	outputJobs := []AWSCloudWatchJob{}
+	var outputJobs []AWSCloudWatchJob
 
 	for _, job := range jobs {
 		if job.Action == JobActionMonitorCloudWatch {
@@ -158,7 +158,7 @@ func (client *Client) DeleteAWSCloudWatchJob(j *AWSCloudWatchJob) error {
 	}
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("Unexpected status code on delete: %d", resp.StatusCode)
+		return fmt.Errorf("unexpected status code on delete: %d", resp.StatusCode)
 	}
 
 	return nil
