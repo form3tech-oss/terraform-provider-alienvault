@@ -9,7 +9,6 @@ import (
 )
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-
 	version, ok := d.Get("api_version").(int)
 	if !ok {
 		if versionStr, ok := d.Get("api_version").(string); ok && versionStr != "" {
