@@ -31,18 +31,8 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	)
 
 	if err := client.Authenticate(); err != nil {
-		return nil, fmt.Errorf("failed in authenticate (u: %s, p: %s): %w", d.Get("username").(hiddenString), d.Get("password").(hiddenString), err)
+		return nil, fmt.Errorf("failed in authenticate: %w", err)
 	}
 
 	return client, nil
-}
-
-type hiddenString string
-
-func (v hiddenString) String() string {
-	sv := string(v)
-	if len(sv) < 3 {
-		return "****"
-	}
-	return "****" + sv[len(sv)-3:]
 }
