@@ -19,7 +19,7 @@ func Provider() *schema.Provider {
             "api_version": {
                 Type:        schema.TypeInt,
                 Description: "The api version you are using, normally 1 or 2",
-                Default:     schema.EnvDefaultFunc("ALIENVAULT_VERSION", 1),
+                DefaultFunc: schema.EnvDefaultFunc("ALIENVAULT_VERSION", 1),
                 Optional:    true,
             },
             "username": {
