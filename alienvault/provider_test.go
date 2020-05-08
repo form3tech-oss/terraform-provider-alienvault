@@ -34,6 +34,7 @@ func testAccPreCheck(t *testing.T) {
 
 func init() {
 	_ = os.Setenv("ALIENVAULT_SKIP_TLS_VERIFY", "1")
+	_ = os.Setenv("ALIENVAULT_VERSION", "2")
 	testAccProvider = Provider()
 	testAccProviders = map[string]terraform.ResourceProvider{
 		"alienvault": testAccProvider,
