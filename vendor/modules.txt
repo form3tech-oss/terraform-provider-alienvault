@@ -59,7 +59,7 @@ github.com/blang/semver
 github.com/davecgh/go-spew/spew
 # github.com/fatih/color v1.7.0
 github.com/fatih/color
-# github.com/form3tech-oss/alienvault v0.3.0
+# github.com/form3tech-oss/alienvault v0.4.0
 ## explicit
 github.com/form3tech-oss/alienvault
 # github.com/golang/protobuf v1.3.0

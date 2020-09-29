@@ -83,7 +83,7 @@ func (client *Client) Authenticate() error {
 
 	// grab XSRF token etc.
 	{
-		_, err := client.httpClient.Get(fmt.Sprintf("https://%s/#/login", client.fqdn))
+		_, err := client.httpClient.Get(fmt.Sprintf("https://%s/api/2.0/users/me", client.fqdn))
 		if err != nil {
 			return err
 		}
