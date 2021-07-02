@@ -1,8 +1,1 @@
-language: go
-go:
-- 1.14.x
-env:
-  global:
-  - TF_ACC=1
-after_success:
-- echo "Done"
+language: shell
